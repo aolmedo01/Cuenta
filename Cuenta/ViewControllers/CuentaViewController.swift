@@ -726,8 +726,7 @@ final class CuentaViewController: UIViewController {
             case "Documentos":
                 self.navigateToDocuments()
             case "Configurar cuenta":
-                // TODO: Navigate to account settings
-                print("Navigate to Configurar cuenta")
+                self.navigateToAccountSettings()
             default:
                 break
             }
@@ -756,8 +755,7 @@ final class CuentaViewController: UIViewController {
             case "Documentos":
                 self.navigateToDocuments()
             case "Configurar cuenta":
-                // TODO: Navigate to account settings
-                print("Navigate to Configurar cuenta")
+                self.navigateToAccountSettings()
             default:
                 break
             }
@@ -772,6 +770,11 @@ final class CuentaViewController: UIViewController {
     private func navigateToDocuments() {
         let documentsVC = DocumentsViewController()
         navigationController?.pushViewController(documentsVC, animated: true)
+    }
+    
+    private func navigateToAccountSettings() {
+        let settingsVC = AccountSettingsViewController()
+        navigationController?.pushViewController(settingsVC, animated: true)
     }
     
     @objc private func copyAccountNumber() {
