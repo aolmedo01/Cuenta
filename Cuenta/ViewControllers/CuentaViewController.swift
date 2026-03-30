@@ -1341,10 +1341,10 @@ extension CuentaViewController: UIScrollViewDelegate {
             if cellTop >= focusZoneTop && cellTop <= focusZoneBottom {
                 // Only act if this is a different cell than the currently expanded one
                 if currentlyExpandedCell !== cell {
-                    // Instantly collapse the previous cell (no animation for speed)
-                    currentlyExpandedCell?.collapse(animated: false)
+                    // Quick collapse the previous cell (fast animation for wave effect)
+                    currentlyExpandedCell?.collapseQuick()
                     
-                    // Expand the new cell with fast animation
+                    // Expand the new cell with wave animation
                     cell.expand(animated: true)
                     currentlyExpandedCell = cell
                 }

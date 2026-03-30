@@ -15,6 +15,21 @@ final class TransactionCell: UIView {
     private var heightConstraint: NSLayoutConstraint?
     private var detailViewHeightConstraint: NSLayoutConstraint?
     
+    // Highlight layer for wave animation
+    private let highlightLayer: CAGradientLayer = {
+        let layer = CAGradientLayer()
+        layer.colors = [
+            UIColor(red: 0.047, green: 0.306, blue: 0.796, alpha: 0.15).cgColor,
+            UIColor(red: 0.047, green: 0.306, blue: 0.796, alpha: 0.05).cgColor,
+            UIColor.clear.cgColor
+        ]
+        layer.locations = [0, 0.5, 1]
+        layer.startPoint = CGPoint(x: 0.5, y: 0)
+        layer.endPoint = CGPoint(x: 0.5, y: 1)
+        layer.opacity = 0
+        return layer
+    }()
+    
     // MARK: - UI Components
     private let containerView: UIView = {
         let view = UIView()
@@ -371,14 +386,12 @@ final class TransactionCell: UIView {
         let detailHeight: CGFloat = isExpanded ? (isWithdrawalPending ? 160 : 140) : 0
         
         if animated {
-            UIView.animate(withDuration: 0.3, delay: 0, usingSpringWithDamping: 0.85, initialSpringVelocity: 0.5) {
-                self.heightConstraint?.constant = newHeight
-                self.detailViewHeightConstraint?.constant = detailHeight
-                self.detailContainerView.alpha = self.isExpanded ? 1 : 0
-                self.compartirButton.alpha = (self.isExpanded && !self.isWithdrawalPending) ? 1 : 0
-                self.footerMessageLabel.alpha = (self.isExpanded && self.isWithdrawalPending) ? 1 : 0
-                self.progressBarContainer.alpha = (self.isExpanded && self.isWithdrawalPending) ? 1 : 0
-                self.superview?.layoutIfNeeded()
+            if isExpanded {
+                // Expanding: add wave highlight effect
+                playExpandAnimation(newHeight: newHeight, detailHeight: detailHeight)
+            } else {
+                // Collapsing: simple animation
+                playCollapseAnimation(newHeight: newHeight, detailHeight: detailHeight)
             }
         } else {
             heightConstraint?.constant = newHeight
@@ -387,19 +400,115 @@ final class TransactionCell: UIView {
             compartirButton.alpha = (isExpanded && !isWithdrawalPending) ? 1 : 0
             footerMessageLabel.alpha = (isExpanded && isWithdrawalPending) ? 1 : 0
             progressBarContainer.alpha = (isExpanded && isWithdrawalPending) ? 1 : 0
+            containerView.transform = .identity
         }
         
         onExpansionChanged?(isExpanded)
     }
     
+    private func playExpandAnimation(newHeight: CGFloat, detailHeight: CGFloat) {
+        // Setup highlight layer
+        highlightLayer.frame = containerView.bounds
+        highlightLayer.cornerRadius = 24
+        containerView.layer.insertSublayer(highlightLayer, at: 0)
+        
+        // Initial scale down slightly
+        containerView.transform = CGAffineTransform(scaleX: 0.98, y: 0.98)
+        
+        // Animate highlight fade in
+        let fadeIn = CABasicAnimation(keyPath: "opacity")
+        fadeIn.fromValue = 0
+        fadeIn.toValue = 1
+        fadeIn.duration = 0.15
+        fadeIn.fillMode = .forwards
+        fadeIn.isRemovedOnCompletion = false
+        highlightLayer.add(fadeIn, forKey: "fadeIn")
+        
+        // Main expansion animation with spring
+        UIView.animate(withDuration: 0.4, delay: 0, usingSpringWithDamping: 0.75, initialSpringVelocity: 0.8, options: [.curveEaseOut]) {
+            self.heightConstraint?.constant = newHeight
+            self.detailViewHeightConstraint?.constant = detailHeight
+            self.containerView.transform = .identity
+            self.superview?.layoutIfNeeded()
+        }
+        
+        // Fade in content with slight delay
+        UIView.animate(withDuration: 0.25, delay: 0.1, options: [.curveEaseOut]) {
+            self.detailContainerView.alpha = 1
+            self.compartirButton.alpha = self.isWithdrawalPending ? 0 : 1
+            self.footerMessageLabel.alpha = self.isWithdrawalPending ? 1 : 0
+            self.progressBarContainer.alpha = self.isWithdrawalPending ? 1 : 0
+        }
+        
+        // Animate highlight fade out
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            let fadeOut = CABasicAnimation(keyPath: "opacity")
+            fadeOut.fromValue = 1
+            fadeOut.toValue = 0
+            fadeOut.duration = 0.3
+            fadeOut.fillMode = .forwards
+            fadeOut.isRemovedOnCompletion = false
+            self.highlightLayer.add(fadeOut, forKey: "fadeOut")
+        }
+    }
+    
+    private func playCollapseAnimation(newHeight: CGFloat, detailHeight: CGFloat) {
+        // Remove any existing highlight
+        highlightLayer.removeAllAnimations()
+        highlightLayer.opacity = 0
+        
+        // Fade out content first
+        UIView.animate(withDuration: 0.15, delay: 0, options: [.curveEaseIn]) {
+            self.detailContainerView.alpha = 0
+            self.compartirButton.alpha = 0
+            self.footerMessageLabel.alpha = 0
+            self.progressBarContainer.alpha = 0
+        }
+        
+        // Collapse with spring
+        UIView.animate(withDuration: 0.3, delay: 0.05, usingSpringWithDamping: 0.85, initialSpringVelocity: 0.5, options: [.curveEaseOut]) {
+            self.heightConstraint?.constant = newHeight
+            self.detailViewHeightConstraint?.constant = detailHeight
+            self.superview?.layoutIfNeeded()
+        }
+    }
+    
     func collapse(animated: Bool = true) {
         guard isExpanded else { return }
+        
+        // Clean up highlight layer
+        highlightLayer.removeAllAnimations()
+        highlightLayer.opacity = 0
+        
         toggleExpansion(animated: animated)
     }
     
     func expand(animated: Bool = true) {
         guard !isExpanded else { return }
         toggleExpansion(animated: animated)
+    }
+    
+    // Quick collapse for auto-mode (minimal animation)
+    func collapseQuick() {
+        guard isExpanded else { return }
+        isExpanded = false
+        
+        // Clean up
+        highlightLayer.removeAllAnimations()
+        highlightLayer.opacity = 0
+        
+        // Fast collapse
+        UIView.animate(withDuration: 0.15, delay: 0, options: [.curveEaseOut]) {
+            self.heightConstraint?.constant = self.collapsedHeight
+            self.detailViewHeightConstraint?.constant = 0
+            self.detailContainerView.alpha = 0
+            self.compartirButton.alpha = 0
+            self.footerMessageLabel.alpha = 0
+            self.progressBarContainer.alpha = 0
+            self.superview?.layoutIfNeeded()
+        }
+        
+        onExpansionChanged?(isExpanded)
     }
     
     // MARK: - Configuration
