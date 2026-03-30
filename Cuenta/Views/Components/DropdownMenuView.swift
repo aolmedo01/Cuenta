@@ -369,6 +369,16 @@ extension DropdownMenuView {
         return menu
     }
     
+    static func downloadFormatMenu() -> DropdownMenuView {
+        let menu = DropdownMenuView()
+        menu.menuWidth = 160
+        menu.items = [
+            DropdownMenuItem(title: "PDF", isSelected: false),
+            DropdownMenuItem(title: "Excel", isSelected: false)
+        ]
+        return menu
+    }
+    
     // Legacy method kept for reference but not used
     static func _amountFilterMenuExtended(selectedIndex: Int = -1) -> DropdownMenuView {
         let menu = DropdownMenuView()

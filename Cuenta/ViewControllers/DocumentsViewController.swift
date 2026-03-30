@@ -58,6 +58,23 @@ final class DocumentsViewController: UIViewController {
         return label
     }()
     
+    // Statements header with download button
+    private var statementsHeaderView: UIView?
+    
+    private lazy var downloadButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.setTitle("Descargar", for: .normal)
+        button.setTitleColor(.accentBlue, for: .normal)
+        button.titleLabel?.font = .manrope(size: 15, weight: .semibold)
+        button.alpha = 0
+        button.isHidden = true
+        button.addTarget(self, action: #selector(downloadTapped), for: .touchUpInside)
+        return button
+    }()
+    
+    private var activeDropdown: DropdownMenuView?
+    
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -164,8 +181,9 @@ final class DocumentsViewController: UIViewController {
     }
     
     private func setupStatementsSection() {
-        // Header
-        let headerView = createSectionHeader(title: "Estados de cuenta", subtitle: "Descarga los que necesites.")
+        // Header with download button
+        let headerView = createStatementsHeader()
+        statementsHeaderView = headerView
         mainStackView.addArrangedSubview(headerView)
         
         // Container for month rows
@@ -431,5 +449,112 @@ final class DocumentsViewController: UIViewController {
                 }
             }
         }
+        
+        // Update download button visibility
+        updateDownloadButtonVisibility()
+    }
+    
+    @objc private func downloadTapped() {
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
+        
+        // Dismiss any existing dropdown
+        activeDropdown?.dismiss()
+        activeDropdown = nil
+        
+        // Show download options dropdown
+        let dropdown = DropdownMenuView.downloadFormatMenu()
+        dropdown.onItemSelected = { [weak self] index, item in
+            guard let self = self else { return }
+            
+            self.activeDropdown?.dismiss()
+            self.activeDropdown = nil
+            
+            let selectedMonths = self.statementMonths.filter { $0.isSelected }
+            
+            switch item.title {
+            case "PDF":
+                self.downloadAsPDF(months: selectedMonths)
+            case "Excel":
+                self.downloadAsExcel(months: selectedMonths)
+            default:
+                break
+            }
+        }
+        dropdown.onDismiss = { [weak self] in
+            self?.activeDropdown = nil
+        }
+        dropdown.show(from: downloadButton, in: view, alignment: .trailing, direction: .down)
+        activeDropdown = dropdown
+    }
+    
+    private func updateDownloadButtonVisibility() {
+        let selectedCount = statementMonths.filter { $0.isSelected }.count
+        let shouldShow = selectedCount > 0
+        
+        UIView.animate(withDuration: 0.25) {
+            if shouldShow {
+                self.downloadButton.isHidden = false
+                self.downloadButton.alpha = 1
+            } else {
+                self.downloadButton.alpha = 0
+            }
+        } completion: { _ in
+            if !shouldShow {
+                self.downloadButton.isHidden = true
+            }
+        }
+    }
+    
+    private func downloadAsPDF(months: [StatementMonth]) {
+        print("Downloading PDF for months: \(months.map { $0.name })")
+        // TODO: Implement PDF generation and download
+        
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.success)
+    }
+    
+    private func downloadAsExcel(months: [StatementMonth]) {
+        print("Downloading Excel for months: \(months.map { $0.name })")
+        // TODO: Implement Excel generation and download
+        
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.success)
+    }
+    
+    private func createStatementsHeader() -> UIView {
+        let container = UIView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+        
+        let titleLabel = UILabel()
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        titleLabel.text = "Estados de cuenta"
+        titleLabel.font = UIFont.systemFont(ofSize: 20, weight: .semibold)
+        titleLabel.textColor = .black
+        
+        let subtitleLabel = UILabel()
+        subtitleLabel.translatesAutoresizingMaskIntoConstraints = false
+        subtitleLabel.text = "Descarga los movimientos del mes"
+        subtitleLabel.font = .manrope(size: 12, weight: .regular)
+        subtitleLabel.textColor = UIColor(red: 0.318, green: 0.353, blue: 0.451, alpha: 1) // #515A73
+        
+        container.addSubview(titleLabel)
+        container.addSubview(subtitleLabel)
+        container.addSubview(downloadButton)
+        
+        NSLayoutConstraint.activate([
+            container.heightAnchor.constraint(equalToConstant: 63),
+            
+            titleLabel.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
+            titleLabel.topAnchor.constraint(equalTo: container.topAnchor, constant: 10),
+            
+            subtitleLabel.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
+            subtitleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 2),
+            
+            downloadButton.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -16),
+            downloadButton.centerYAnchor.constraint(equalTo: container.centerYAnchor)
+        ])
+        
+        return container
     }
 }
