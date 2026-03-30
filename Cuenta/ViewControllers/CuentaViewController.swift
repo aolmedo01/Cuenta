@@ -223,6 +223,23 @@ final class CuentaViewController: UIViewController {
         return view
     }()
     
+    // MARK: - Segmented Control (Manual/Automático)
+    private let segmentedControlView: SegmentedControlView = {
+        let view = SegmentedControlView()
+        return view
+    }()
+    
+    private let segmentedControlContainer: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+    
+    private let stickySegmentedControlView: SegmentedControlView = {
+        let view = SegmentedControlView()
+        return view
+    }()
+    
     private var isFilterVisible = false
     private var activeDropdown: DropdownMenuView?
     private var activeFilterType: String?
@@ -422,6 +439,21 @@ final class CuentaViewController: UIViewController {
         // Add filter chips below search bar
         mainStackView.addArrangedSubview(filterChipsView)
         
+        // Add segmented control (Manual/Automático)
+        mainStackView.addArrangedSubview(segmentedControlContainer)
+        segmentedControlContainer.addSubview(segmentedControlView)
+        
+        NSLayoutConstraint.activate([
+            segmentedControlContainer.heightAnchor.constraint(equalToConstant: 40),
+            segmentedControlView.trailingAnchor.constraint(equalTo: segmentedControlContainer.trailingAnchor, constant: -12),
+            segmentedControlView.centerYAnchor.constraint(equalTo: segmentedControlContainer.centerYAnchor)
+        ])
+        
+        segmentedControlView.onSegmentChanged = { [weak self] segment in
+            print("Segment changed to: \(segment == .manual ? "Manual" : "Automático")")
+            self?.stickySegmentedControlView.selectedSegment = segment
+        }
+        
         // Wire up filter button
         searchBarView.filterButton.addTarget(self, action: #selector(filterButtonTapped), for: .touchUpInside)
         
@@ -515,6 +547,14 @@ final class CuentaViewController: UIViewController {
         // Add FilterChipsView to sticky header
         stickyHeaderView.addSubview(stickyFilterChipsView)
         
+        // Add segmented control to sticky header
+        stickyHeaderView.addSubview(stickySegmentedControlView)
+        
+        stickySegmentedControlView.onSegmentChanged = { [weak self] segment in
+            print("Sticky segment changed to: \(segment == .manual ? "Manual" : "Automático")")
+            self?.segmentedControlView.selectedSegment = segment
+        }
+        
         // Setup sticky filter chips callbacks
         stickyFilterChipsView.onFilterSelected = { [weak self] filterType, anchorView in
             self?.handleFilterSelection(filterType, anchorView: anchorView)
@@ -545,7 +585,7 @@ final class CuentaViewController: UIViewController {
         stickyBalanceLabel.text = account.formattedBalance
         stickyAccountLabel.text = "\(account.accountType) \(account.accountNumber)"
         
-        stickyHeightConstraint = stickyHeaderView.heightAnchor.constraint(equalToConstant: 64)
+        stickyHeightConstraint = stickyHeaderView.heightAnchor.constraint(equalToConstant: 100)
         
         NSLayoutConstraint.activate([
             stickyHeaderView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
@@ -568,7 +608,11 @@ final class CuentaViewController: UIViewController {
             // Filter chips view
             stickyFilterChipsView.topAnchor.constraint(equalTo: stickyBackButton.bottomAnchor, constant: 8),
             stickyFilterChipsView.leadingAnchor.constraint(equalTo: stickyHeaderView.leadingAnchor),
-            stickyFilterChipsView.trailingAnchor.constraint(equalTo: stickyHeaderView.trailingAnchor)
+            stickyFilterChipsView.trailingAnchor.constraint(equalTo: stickyHeaderView.trailingAnchor),
+            
+            // Segmented control - positioned at bottom right of sticky header
+            stickySegmentedControlView.bottomAnchor.constraint(equalTo: stickyHeaderView.bottomAnchor, constant: -8),
+            stickySegmentedControlView.trailingAnchor.constraint(equalTo: stickyHeaderView.trailingAnchor, constant: -12)
         ])
     }
     
@@ -583,13 +627,13 @@ final class CuentaViewController: UIViewController {
             if shouldShowFilters {
                 self.stickyFilterChipsView.isHidden = false
                 self.stickyFilterChipsView.alpha = 1
-                self.stickyHeightConstraint?.constant = 130
-                self.scrollView.contentInset.top = 130
+                self.stickyHeightConstraint?.constant = 170
+                self.scrollView.contentInset.top = 170
             } else {
                 self.stickyFilterChipsView.isHidden = true
                 self.stickyFilterChipsView.alpha = 0
-                self.stickyHeightConstraint?.constant = 80
-                self.scrollView.contentInset.top = 80
+                self.stickyHeightConstraint?.constant = 100
+                self.scrollView.contentInset.top = 100
             }
             self.view.layoutIfNeeded()
         }
@@ -607,13 +651,13 @@ final class CuentaViewController: UIViewController {
             if show && self.isFilterVisible {
                 self.stickyFilterChipsView.isHidden = false
                 self.stickyFilterChipsView.alpha = 1
-                self.stickyHeightConstraint?.constant = 130
-                self.scrollView.contentInset.top = 130
+                self.stickyHeightConstraint?.constant = 170
+                self.scrollView.contentInset.top = 170
             } else if show {
                 self.stickyFilterChipsView.isHidden = true
                 self.stickyFilterChipsView.alpha = 0
-                self.stickyHeightConstraint?.constant = 80
-                self.scrollView.contentInset.top = 80
+                self.stickyHeightConstraint?.constant = 100
+                self.scrollView.contentInset.top = 100
             } else {
                 self.scrollView.contentInset.top = 0
             }
