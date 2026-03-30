@@ -40,7 +40,7 @@ struct Transaction {
         formatter.currencySymbol = "$"
         formatter.maximumFractionDigits = 2
         formatter.minimumFractionDigits = 2
-        let prefix = amount >= 0 ? "+" : ""
+        let prefix = amount >= 0 ? "+" : "-"
         return prefix + (formatter.string(from: NSNumber(value: abs(amount))) ?? "$0.00")
     }
     
@@ -50,7 +50,7 @@ struct Transaction {
         formatter.currencySymbol = "$"
         formatter.maximumFractionDigits = 2
         formatter.minimumFractionDigits = 2
-        return formatter.string(from: NSNumber(value: balance)) ?? "$0.00"
+        return formatter.string(from: NSNumber(value: abs(balance))) ?? "$0.00"
     }
 }
 

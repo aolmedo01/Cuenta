@@ -628,14 +628,14 @@ final class CuentaViewController: UIViewController {
         let twoDaysAgo = Calendar.current.date(byAdding: .day, value: -2, to: today)!
         
         let todayTransactions: [Transaction] = [
-            Transaction(id: UUID(), name: "Daniel Rodriguez", description: "Movimiento interno", amount: 1600.00, balance: 1640.00, date: today, type: .transfer),
+            Transaction(id: UUID(), name: "Jessica Alfonso", description: "Movimiento interno", amount: 1600.00, balance: 1640.00, date: today, type: .transfer),
             Transaction(id: UUID(), name: "Retiro sin tarjeta", description: "Por retirar", amount: -40.00, balance: 40.00, date: today, type: .withdrawal, status: .toWithdraw),
             Transaction(id: UUID(), name: "CNEL", description: "Pago de servicio luz", amount: -120.00, balance: 80.00, date: today, type: .electricity),
-            Transaction(id: UUID(), name: "Fernanda Ortiz Viveka", description: "Mercado frutas", amount: -60.00, balance: 200.00, date: today, type: .payment)
+            Transaction(id: UUID(), name: "Carla Lecaro", description: "Mercado frutas", amount: -60.00, balance: 200.00, date: today, type: .payment)
         ]
         
         let yesterdayTransactions: [Transaction] = [
-            Transaction(id: UUID(), name: "David Guerra", description: "Alquiler", amount: 60.00, balance: 260.00, date: yesterday, type: .deposit),
+            Transaction(id: UUID(), name: "Isabela Jacome", description: "Alquiler", amount: 60.00, balance: 260.00, date: yesterday, type: .deposit),
             Transaction(id: UUID(), name: "Transferencia a tu meta", description: "Vacaciones Argentina", amount: -10.00, balance: 250.00, date: yesterday, type: .goal),
             Transaction(id: UUID(), name: "Retiro en ventanilla", description: "Agencia Mall del Sol", amount: -50.00, balance: 260.00, date: yesterday, type: .withdrawal),
             Transaction(id: UUID(), name: "Emapad", description: "Pago de servicio agua", amount: -10.00, balance: 310.00, date: yesterday, type: .payment),
