@@ -486,11 +486,13 @@ final class CuentaViewController: UIViewController {
             if shouldShowFilters {
                 self.stickyFilterChipsView.isHidden = false
                 self.stickyFilterChipsView.alpha = 1
-                self.stickyHeightConstraint?.constant = 110
+                self.stickyHeightConstraint?.constant = 130
+                self.scrollView.contentInset.top = 130
             } else {
                 self.stickyFilterChipsView.isHidden = true
                 self.stickyFilterChipsView.alpha = 0
-                self.stickyHeightConstraint?.constant = 64
+                self.stickyHeightConstraint?.constant = 80
+                self.scrollView.contentInset.top = 80
             }
             self.view.layoutIfNeeded()
         }
@@ -508,11 +510,15 @@ final class CuentaViewController: UIViewController {
             if show && self.isFilterVisible {
                 self.stickyFilterChipsView.isHidden = false
                 self.stickyFilterChipsView.alpha = 1
-                self.stickyHeightConstraint?.constant = 110
+                self.stickyHeightConstraint?.constant = 130
+                self.scrollView.contentInset.top = 130
             } else if show {
                 self.stickyFilterChipsView.isHidden = true
                 self.stickyFilterChipsView.alpha = 0
-                self.stickyHeightConstraint?.constant = 64
+                self.stickyHeightConstraint?.constant = 80
+                self.scrollView.contentInset.top = 80
+            } else {
+                self.scrollView.contentInset.top = 0
             }
         }
     }
