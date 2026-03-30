@@ -240,6 +240,12 @@ final class CuentaViewController: UIViewController {
         return view
     }()
     
+    // Expansion mode: Manual (user taps) vs Automático (auto expand)
+    private var isManualMode = true
+    private var currentlyExpandedCell: TransactionCell?
+    private var allTransactionCells: [TransactionCell] = []
+    private var lastScrollOffset: CGFloat = 0
+    
     private var isFilterVisible = false
     private var activeDropdown: DropdownMenuView?
     private var activeFilterType: String?
@@ -450,8 +456,14 @@ final class CuentaViewController: UIViewController {
         ])
         
         segmentedControlView.onSegmentChanged = { [weak self] segment in
+            guard let self = self else { return }
             print("Segment changed to: \(segment == .manual ? "Manual" : "Automático")")
-            self?.stickySegmentedControlView.selectedSegment = segment
+            self.isManualMode = (segment == .manual)
+            self.stickySegmentedControlView.selectedSegment = segment
+            
+            // Collapse any expanded cell when switching modes
+            self.currentlyExpandedCell?.collapse()
+            self.currentlyExpandedCell = nil
         }
         
         // Wire up filter button
@@ -551,8 +563,14 @@ final class CuentaViewController: UIViewController {
         stickyHeaderView.addSubview(stickySegmentedControlView)
         
         stickySegmentedControlView.onSegmentChanged = { [weak self] segment in
+            guard let self = self else { return }
             print("Sticky segment changed to: \(segment == .manual ? "Manual" : "Automático")")
-            self?.segmentedControlView.selectedSegment = segment
+            self.isManualMode = (segment == .manual)
+            self.segmentedControlView.selectedSegment = segment
+            
+            // Collapse any expanded cell when switching modes
+            self.currentlyExpandedCell?.collapse()
+            self.currentlyExpandedCell = nil
         }
         
         // Setup sticky filter chips callbacks
@@ -673,7 +691,7 @@ final class CuentaViewController: UIViewController {
         
         let todayTransactions: [Transaction] = [
             Transaction(id: UUID(), name: "Jessica Alfonso", description: "Movimiento interno", amount: 1600.00, balance: 1640.00, date: today, type: .transfer),
-            Transaction(id: UUID(), name: "Retiro sin tarjeta", description: "Por retirar", amount: -40.00, balance: 40.00, date: today, type: .withdrawal, status: .toWithdraw),
+            Transaction(id: UUID(), name: "Retiro sin tarjeta", description: "Por retirar", amount: -50.00, balance: 260.00, date: today, type: .withdrawal, status: .toWithdraw, recipientName: "María Guadalupe López Martillo", recipientPhone: "096XXXX193", timeRemaining: "23h 15m", progressRemaining: 0.7),
             Transaction(id: UUID(), name: "CNEL", description: "Pago de servicio luz", amount: -120.00, balance: 80.00, date: today, type: .electricity),
             Transaction(id: UUID(), name: "Carla Lecaro", description: "Mercado frutas", amount: -60.00, balance: 200.00, date: today, type: .payment)
         ]
@@ -708,6 +726,7 @@ final class CuentaViewController: UIViewController {
         
         // Clear existing transactions
         transactionsStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        allTransactionCells.removeAll()
         
         // Add transaction sections
         for section in transactionSections {
@@ -727,6 +746,25 @@ final class CuentaViewController: UIViewController {
             for transaction in section.transactions {
                 let cell = TransactionCell()
                 cell.configure(with: transaction)
+                
+                // Handle expansion
+                cell.onExpansionChanged = { [weak self, weak cell] isExpanded in
+                    guard let self = self, let cell = cell else { return }
+                    
+                    if isExpanded {
+                        // Collapse previously expanded cell
+                        if let previousCell = self.currentlyExpandedCell, previousCell !== cell {
+                            previousCell.collapse()
+                        }
+                        self.currentlyExpandedCell = cell
+                    } else {
+                        if self.currentlyExpandedCell === cell {
+                            self.currentlyExpandedCell = nil
+                        }
+                    }
+                }
+                
+                allTransactionCells.append(cell)
                 sectionStack.addArrangedSubview(cell)
             }
             
@@ -1279,5 +1317,45 @@ extension CuentaViewController: UIScrollViewDelegate {
         // Show floating buttons when user scrolls down (any amount > 10px)
         let hasScrolledDown = offsetY > 10
         updateFloatingButtons(scrolledToBottom: hasScrolledDown)
+        
+        // Auto-expand mode: expand cells as they enter the visible area while scrolling down
+        if !isManualMode {
+            let isScrollingDown = offsetY > lastScrollOffset
+            
+            if isScrollingDown {
+                checkForAutoExpand(in: scrollView)
+            }
+        }
+        
+        lastScrollOffset = offsetY
+    }
+    
+    private func checkForAutoExpand(in scrollView: UIScrollView) {
+        let visibleRect = CGRect(
+            x: 0,
+            y: scrollView.contentOffset.y,
+            width: scrollView.bounds.width,
+            height: scrollView.bounds.height
+        )
+        
+        // Find the first collapsed cell that is entering the visible area
+        for cell in allTransactionCells {
+            // Convert cell frame to scroll view coordinate space
+            guard let cellFrame = cell.superview?.convert(cell.frame, to: scrollView) else { continue }
+            
+            // Check if cell is entering the visible area from below (top of cell is in lower half of screen)
+            let cellTopInView = cellFrame.minY - scrollView.contentOffset.y
+            let triggerZone = scrollView.bounds.height * 0.6 // Trigger when cell enters top 60% of screen
+            
+            if cellTopInView > 0 && cellTopInView < triggerZone && !cell.isCurrentlyExpanded {
+                // Only expand one cell at a time
+                if currentlyExpandedCell !== cell {
+                    currentlyExpandedCell?.collapse()
+                    cell.expand()
+                    currentlyExpandedCell = cell
+                }
+                break
+            }
+        }
     }
 }

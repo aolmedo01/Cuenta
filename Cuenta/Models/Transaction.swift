@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 // MARK: - Transaction Type
 enum TransactionType: String {
@@ -29,6 +30,12 @@ struct Transaction {
     let date: Date
     let type: TransactionType
     var status: TransactionStatus = .completed
+    
+    // Withdrawal-specific properties
+    var recipientName: String?
+    var recipientPhone: String?
+    var timeRemaining: String?
+    var progressRemaining: CGFloat?
     
     var isPositive: Bool {
         return amount >= 0

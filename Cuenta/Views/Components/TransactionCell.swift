@@ -2,6 +2,19 @@ import UIKit
 
 final class TransactionCell: UIView {
     
+    // MARK: - Properties
+    private var isExpanded = false
+    var isCurrentlyExpanded: Bool { isExpanded }
+    
+    private var transaction: Transaction?
+    var onExpansionChanged: ((Bool) -> Void)?
+    
+    private var collapsedHeight: CGFloat = 72
+    private var expandedHeight: CGFloat = 280
+    
+    private var heightConstraint: NSLayoutConstraint?
+    private var detailViewHeightConstraint: NSLayoutConstraint?
+    
     // MARK: - UI Components
     private let containerView: UIView = {
         let view = UIView()
@@ -30,7 +43,7 @@ final class TransactionCell: UIView {
     private let titleLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = UIFont.systemFont(ofSize: 17, weight: .semibold)
+        label.font = .manrope(size: 17, weight: .semibold)
         label.textColor = UIColor(red: 0.122, green: 0.161, blue: 0.239, alpha: 1) // #1F293D
         return label
     }()
@@ -38,7 +51,7 @@ final class TransactionCell: UIView {
     private let subtitleLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = UIFont.systemFont(ofSize: 15, weight: .regular)
+        label.font = .manrope(size: 15, weight: .regular)
         label.textColor = UIColor(red: 0.424, green: 0.455, blue: 0.553, alpha: 1) // #6C748D
         return label
     }()
@@ -55,7 +68,7 @@ final class TransactionCell: UIView {
     private let statusLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = UIFont.systemFont(ofSize: 10, weight: .bold)
+        label.font = .manrope(size: 10, weight: .bold)
         label.textColor = UIColor(red: 0.047, green: 0.306, blue: 0.796, alpha: 1) // #0C4ECB
         label.textAlignment = .center
         return label
@@ -64,7 +77,7 @@ final class TransactionCell: UIView {
     private let amountLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = UIFont.systemFont(ofSize: 15, weight: .regular)
+        label.font = .manrope(size: 15, weight: .regular)
         label.textAlignment = .right
         return label
     }()
@@ -72,7 +85,7 @@ final class TransactionCell: UIView {
     private let balanceLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = UIFont.systemFont(ofSize: 12, weight: .regular)
+        label.font = .manrope(size: 12, weight: .regular)
         label.textColor = UIColor(red: 0.541, green: 0.576, blue: 0.659, alpha: 1) // #8A93A8
         label.textAlignment = .right
         return label
@@ -96,15 +109,106 @@ final class TransactionCell: UIView {
         return stack
     }()
     
+    // MARK: - Expandable Detail View
+    private let detailContainerView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = UIColor(red: 0.988, green: 0.988, blue: 0.992, alpha: 1)
+        view.clipsToBounds = true
+        view.alpha = 0
+        return view
+    }()
+    
+    private let separatorLine: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = UIColor(red: 0.933, green: 0.941, blue: 0.957, alpha: 1) // #EEF0F4
+        return view
+    }()
+    
+    private let detailStackView: UIStackView = {
+        let stack = UIStackView()
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        stack.axis = .vertical
+        stack.spacing = 16
+        stack.alignment = .fill
+        return stack
+    }()
+    
+    // Detail rows - Standard
+    private let fechaRow = TransactionDetailRow(label: "Fecha")
+    private let tipoRow = TransactionDetailRow(label: "Tipo")
+    private let referenciaRow = TransactionDetailRow(label: "Referencia")
+    
+    // Detail rows - Withdrawal specific
+    private let enviadoARow = TransactionDetailRow(label: "Enviado a")
+    private let celularRow = TransactionDetailRow(label: "Celular")
+    private let tiempoRestanteRow = TransactionDetailRow(label: "Tiempo restante")
+    
+    private let progressBarContainer: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = UIColor(red: 0.878, green: 0.878, blue: 0.878, alpha: 1) // Light gray
+        view.layer.cornerRadius = 4
+        return view
+    }()
+    
+    private let progressBarFill: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .accentBlue
+        view.layer.cornerRadius = 4
+        return view
+    }()
+    
+    private var progressWidthConstraint: NSLayoutConstraint?
+    
+    private let footerMessageLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.text = "El dinero volverá a tu cuenta si expira el tiempo"
+        label.font = .manrope(size: 12, weight: .regular)
+        label.textColor = UIColor(red: 0.424, green: 0.455, blue: 0.553, alpha: 1) // #6C748D
+        label.textAlignment = .center
+        label.isHidden = true
+        return label
+    }()
+    
+    private let reportButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.setTitle("Reportar este consumo", for: .normal)
+        button.titleLabel?.font = .manrope(size: 11, weight: .regular)
+        button.setTitleColor(UIColor(red: 0.047, green: 0.306, blue: 0.796, alpha: 1), for: .normal) // #0C4ECB
+        button.contentHorizontalAlignment = .left
+        return button
+    }()
+    
+    private let compartirButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.setTitle("Compartir", for: .normal)
+        button.titleLabel?.font = .manrope(size: 17, weight: .regular)
+        button.setTitleColor(.white, for: .normal)
+        button.backgroundColor = UIColor(red: 0.086, green: 0.059, blue: 0.255, alpha: 1) // #160F41
+        button.layer.cornerRadius = 17
+        return button
+    }()
+    
+    // Track if this is a withdrawal transaction
+    private var isWithdrawalPending = false
+    
     // MARK: - Initialization
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupView()
+        setupTapGesture()
     }
     
     required init?(coder: NSCoder) {
         super.init(coder: coder)
         setupView()
+        setupTapGesture()
     }
     
     // MARK: - Setup
@@ -127,8 +231,38 @@ final class TransactionCell: UIView {
         containerView.addSubview(labelsStack)
         containerView.addSubview(amountStack)
         
+        // Detail view setup
+        containerView.addSubview(detailContainerView)
+        detailContainerView.addSubview(separatorLine)
+        detailContainerView.addSubview(detailStackView)
+        
+        // Standard detail rows (will be hidden for withdrawal)
+        detailStackView.addArrangedSubview(fechaRow)
+        detailStackView.addArrangedSubview(tipoRow)
+        detailStackView.addArrangedSubview(referenciaRow)
+        detailStackView.addArrangedSubview(reportButton)
+        
+        // Withdrawal specific rows (will be hidden for standard transactions)
+        detailStackView.addArrangedSubview(enviadoARow)
+        detailStackView.addArrangedSubview(celularRow)
+        detailStackView.addArrangedSubview(tiempoRestanteRow)
+        
+        // Progress bar
+        detailContainerView.addSubview(progressBarContainer)
+        progressBarContainer.addSubview(progressBarFill)
+        progressWidthConstraint = progressBarFill.widthAnchor.constraint(equalTo: progressBarContainer.widthAnchor, multiplier: 0.7)
+        
+        // Footer message
+        containerView.addSubview(footerMessageLabel)
+        
+        containerView.addSubview(compartirButton)
+        compartirButton.alpha = 0
+        
+        heightConstraint = heightAnchor.constraint(equalToConstant: collapsedHeight)
+        detailViewHeightConstraint = detailContainerView.heightAnchor.constraint(equalToConstant: 0)
+        
         NSLayoutConstraint.activate([
-            // Container View (with bottom spacing for separation)
+            // Container View
             containerView.topAnchor.constraint(equalTo: topAnchor),
             containerView.leadingAnchor.constraint(equalTo: leadingAnchor),
             containerView.trailingAnchor.constraint(equalTo: trailingAnchor),
@@ -142,7 +276,7 @@ final class TransactionCell: UIView {
             
             // Icon Container
             iconContainer.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-            iconContainer.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+            iconContainer.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 14),
             iconContainer.widthAnchor.constraint(equalToConstant: 36),
             iconContainer.heightAnchor.constraint(equalToConstant: 36),
             
@@ -154,20 +288,124 @@ final class TransactionCell: UIView {
             
             // Labels Stack
             labelsStack.leadingAnchor.constraint(equalTo: iconContainer.trailingAnchor, constant: 16),
-            labelsStack.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+            labelsStack.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 12),
             labelsStack.trailingAnchor.constraint(lessThanOrEqualTo: amountStack.leadingAnchor, constant: -24),
             
             // Amount Stack
             amountStack.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
-            amountStack.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+            amountStack.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 12),
             
-            // Height (64px container + 8px spacing)
-            heightAnchor.constraint(equalToConstant: 72)
+            // Detail Container
+            detailContainerView.topAnchor.constraint(equalTo: labelsStack.bottomAnchor, constant: 12),
+            detailContainerView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            detailContainerView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+            detailViewHeightConstraint!,
+            
+            // Separator
+            separatorLine.topAnchor.constraint(equalTo: detailContainerView.topAnchor),
+            separatorLine.leadingAnchor.constraint(equalTo: detailContainerView.leadingAnchor, constant: 68),
+            separatorLine.trailingAnchor.constraint(equalTo: detailContainerView.trailingAnchor, constant: -16),
+            separatorLine.heightAnchor.constraint(equalToConstant: 1),
+            
+            // Detail Stack
+            detailStackView.topAnchor.constraint(equalTo: separatorLine.bottomAnchor, constant: 16),
+            detailStackView.leadingAnchor.constraint(equalTo: detailContainerView.leadingAnchor, constant: 16),
+            detailStackView.trailingAnchor.constraint(equalTo: detailContainerView.trailingAnchor, constant: -16),
+            
+            // Progress Bar Container
+            progressBarContainer.topAnchor.constraint(equalTo: detailStackView.bottomAnchor, constant: 16),
+            progressBarContainer.leadingAnchor.constraint(equalTo: detailContainerView.leadingAnchor, constant: 16),
+            progressBarContainer.trailingAnchor.constraint(equalTo: detailContainerView.trailingAnchor, constant: -16),
+            progressBarContainer.heightAnchor.constraint(equalToConstant: 8),
+            
+            // Progress Bar Fill
+            progressBarFill.leadingAnchor.constraint(equalTo: progressBarContainer.leadingAnchor),
+            progressBarFill.topAnchor.constraint(equalTo: progressBarContainer.topAnchor),
+            progressBarFill.bottomAnchor.constraint(equalTo: progressBarContainer.bottomAnchor),
+            progressWidthConstraint!,
+            
+            // Footer Message
+            footerMessageLabel.topAnchor.constraint(equalTo: progressBarContainer.bottomAnchor, constant: 20),
+            footerMessageLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
+            footerMessageLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+            
+            // Compartir Button
+            compartirButton.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
+            compartirButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+            compartirButton.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -16),
+            compartirButton.heightAnchor.constraint(equalToConstant: 34),
+            
+            // Height
+            heightConstraint!
         ])
+        
+        // Initially hide withdrawal-specific rows and progress bar
+        enviadoARow.isHidden = true
+        celularRow.isHidden = true
+        tiempoRestanteRow.isHidden = true
+        progressBarContainer.isHidden = true
+    }
+    
+    private func setupTapGesture() {
+        let tap = UITapGestureRecognizer(target: self, action: #selector(handleTap))
+        containerView.addGestureRecognizer(tap)
+        containerView.isUserInteractionEnabled = true
+    }
+    
+    // MARK: - Actions
+    @objc private func handleTap() {
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
+        toggleExpansion()
+    }
+    
+    func toggleExpansion(animated: Bool = true) {
+        isExpanded.toggle()
+        
+        // Different heights for withdrawal vs standard transactions
+        let withdrawalExpandedHeight: CGFloat = 277
+        let standardExpandedHeight: CGFloat = expandedHeight
+        let targetExpandedHeight = isWithdrawalPending ? withdrawalExpandedHeight : standardExpandedHeight
+        
+        let newHeight = isExpanded ? targetExpandedHeight : collapsedHeight
+        let detailHeight: CGFloat = isExpanded ? (isWithdrawalPending ? 160 : 140) : 0
+        
+        if animated {
+            UIView.animate(withDuration: 0.3, delay: 0, usingSpringWithDamping: 0.85, initialSpringVelocity: 0.5) {
+                self.heightConstraint?.constant = newHeight
+                self.detailViewHeightConstraint?.constant = detailHeight
+                self.detailContainerView.alpha = self.isExpanded ? 1 : 0
+                self.compartirButton.alpha = (self.isExpanded && !self.isWithdrawalPending) ? 1 : 0
+                self.footerMessageLabel.alpha = (self.isExpanded && self.isWithdrawalPending) ? 1 : 0
+                self.progressBarContainer.alpha = (self.isExpanded && self.isWithdrawalPending) ? 1 : 0
+                self.superview?.layoutIfNeeded()
+            }
+        } else {
+            heightConstraint?.constant = newHeight
+            detailViewHeightConstraint?.constant = detailHeight
+            detailContainerView.alpha = isExpanded ? 1 : 0
+            compartirButton.alpha = (isExpanded && !isWithdrawalPending) ? 1 : 0
+            footerMessageLabel.alpha = (isExpanded && isWithdrawalPending) ? 1 : 0
+            progressBarContainer.alpha = (isExpanded && isWithdrawalPending) ? 1 : 0
+        }
+        
+        onExpansionChanged?(isExpanded)
+    }
+    
+    func collapse(animated: Bool = true) {
+        guard isExpanded else { return }
+        toggleExpansion(animated: animated)
+    }
+    
+    func expand(animated: Bool = true) {
+        guard !isExpanded else { return }
+        toggleExpansion(animated: animated)
     }
     
     // MARK: - Configuration
     func configure(with transaction: Transaction) {
+        self.transaction = transaction
+        
         titleLabel.text = transaction.name
         subtitleLabel.text = transaction.description
         amountLabel.text = transaction.formattedAmount
@@ -214,5 +452,134 @@ final class TransactionCell: UIView {
         
         iconImageView.image = UIImage(systemName: iconName)?
             .withConfiguration(UIImage.SymbolConfiguration(pointSize: 16, weight: .medium))
+        
+        // Configure detail rows
+        let dateFormatter = DateFormatter()
+        dateFormatter.locale = Locale(identifier: "es_ES")
+        dateFormatter.dateFormat = "EEEE d 'de' MMMM, HH:mm"
+        let dateString = dateFormatter.string(from: transaction.date).capitalized
+        fechaRow.setValue(dateString)
+        
+        // Type description
+        let typeDescription: String
+        switch transaction.type {
+        case .transfer:
+            typeDescription = transaction.isPositive ? "Transferencia recibida" : "Transferencia enviada"
+        case .withdrawal:
+            typeDescription = "Retiro en cajero"
+        case .deposit:
+            typeDescription = "Transferencia desde Banco Pichincha"
+        case .payment:
+            typeDescription = "Pago de servicio"
+        case .goal:
+            typeDescription = transaction.isPositive ? "Retiro de meta" : "Ahorro a meta"
+        case .cardPurchase:
+            typeDescription = "Compra con tarjeta"
+        case .salary:
+            typeDescription = "Depósito de nómina"
+        case .electricity:
+            typeDescription = "Pago de servicio luz"
+        }
+        tipoRow.setValue(typeDescription)
+        
+        // Reference number (mock)
+        let referenceNumber = String(format: "%015d", Int.random(in: 100000...999999999))
+        referenciaRow.setValue(referenceNumber)
+        
+        // Check if this is a cardless withdrawal (Retiro sin tarjeta)
+        isWithdrawalPending = transaction.type == .withdrawal && transaction.status == .toWithdraw
+        
+        if isWithdrawalPending {
+            // Hide standard rows (only tipo and referencia)
+            tipoRow.isHidden = true
+            referenciaRow.isHidden = true
+            reportButton.isHidden = true
+            compartirButton.isHidden = true
+            
+            // Show withdrawal-specific rows including fecha
+            fechaRow.isHidden = false
+            enviadoARow.isHidden = false
+            celularRow.isHidden = false
+            tiempoRestanteRow.isHidden = false
+            progressBarContainer.isHidden = false
+            footerMessageLabel.isHidden = false
+            
+            // Configure withdrawal data
+            enviadoARow.setValue(transaction.recipientName ?? "Destinatario")
+            celularRow.setValue(transaction.recipientPhone ?? "099 999 9999")
+            tiempoRestanteRow.setValue(transaction.timeRemaining ?? "35 min")
+            
+            // Update progress (mock: 70% remaining)
+            let progress = transaction.progressRemaining ?? 0.7
+            progressWidthConstraint?.isActive = false
+            progressWidthConstraint = progressBarFill.widthAnchor.constraint(equalTo: progressBarContainer.widthAnchor, multiplier: progress)
+            progressWidthConstraint?.isActive = true
+        } else {
+            // Show standard rows
+            fechaRow.isHidden = false
+            tipoRow.isHidden = false
+            referenciaRow.isHidden = false
+            reportButton.isHidden = false
+            compartirButton.isHidden = false
+            
+            // Hide withdrawal-specific rows
+            enviadoARow.isHidden = true
+            celularRow.isHidden = true
+            tiempoRestanteRow.isHidden = true
+            progressBarContainer.isHidden = true
+            footerMessageLabel.isHidden = true
+        }
+    }
+}
+
+// MARK: - Transaction Detail Row
+final class TransactionDetailRow: UIView {
+    
+    private let labelView: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .manrope(size: 12, weight: .regular)
+        label.textColor = UIColor(red: 0.541, green: 0.576, blue: 0.659, alpha: 1) // #8A93A8
+        return label
+    }()
+    
+    private let valueLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .manrope(size: 12, weight: .medium)
+        label.textColor = UIColor(red: 0.318, green: 0.353, blue: 0.451, alpha: 1) // #515A73
+        label.textAlignment = .right
+        return label
+    }()
+    
+    init(label: String) {
+        super.init(frame: .zero)
+        translatesAutoresizingMaskIntoConstraints = false
+        labelView.text = label
+        setupView()
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    private func setupView() {
+        addSubview(labelView)
+        addSubview(valueLabel)
+        
+        NSLayoutConstraint.activate([
+            heightAnchor.constraint(equalToConstant: 16),
+            
+            labelView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            labelView.centerYAnchor.constraint(equalTo: centerYAnchor),
+            
+            valueLabel.trailingAnchor.constraint(equalTo: trailingAnchor),
+            valueLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
+            valueLabel.leadingAnchor.constraint(greaterThanOrEqualTo: labelView.trailingAnchor, constant: 16)
+        ])
+    }
+    
+    func setValue(_ value: String) {
+        valueLabel.text = value
     }
 }
