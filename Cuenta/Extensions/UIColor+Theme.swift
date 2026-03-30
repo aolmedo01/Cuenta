@@ -25,5 +25,5 @@ extension UIColor {
     static let separator = UIColor(red: 0.9, green: 0.9, blue: 0.9, alpha: 1)
     
     // MARK: - Accent
-    static let accentBlue = UIColor(red: 0.2, green: 0.4, blue: 0.9, alpha: 1)
+    static let accentBlue = UIColor(red: 0.0, green: 0.533, blue: 1.0, alpha: 1) // #0088FF
 }

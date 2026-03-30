@@ -469,18 +469,8 @@ final class CuentaViewController: UIViewController {
         let generator = UIImpactFeedbackGenerator(style: .light)
         generator.impactOccurred()
         
-        // Update filter button appearance
-        UIView.animate(withDuration: 0.2) {
-            if self.isFilterVisible {
-                // Active state - blue background, white icon
-                self.searchBarView.filterOverlay.backgroundColor = .accentBlue
-                self.searchBarView.filterButton.tintColor = .white
-            } else {
-                // Inactive state - glass background, blue icon
-                self.searchBarView.filterOverlay.backgroundColor = UIColor(red: 0.969, green: 0.969, blue: 0.969, alpha: 0.85)
-                self.searchBarView.filterButton.tintColor = .accentBlue
-            }
-        }
+        // Update filter button appearance with liquid glass effect
+        searchBarView.setFilterActive(isFilterVisible)
         
         // Show/hide filter chips
         if isFilterVisible {
