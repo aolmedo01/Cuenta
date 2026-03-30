@@ -144,6 +144,16 @@ final class CuentaViewController: UIViewController {
         return button
     }()
     
+    // Sticky header filter chips - same component as main filter
+    private let stickyFilterChipsView: FilterChipsView = {
+        let view = FilterChipsView()
+        view.isHidden = true
+        view.alpha = 0
+        return view
+    }()
+    
+    private var stickyHeightConstraint: NSLayoutConstraint?
+    
     // MARK: - Transfer Button
     private lazy var transferButton: TransferButton = {
         let button = TransferButton()
@@ -331,14 +341,25 @@ final class CuentaViewController: UIViewController {
         filterChipsView.onFilterCleared = { [weak self] filterType in
             guard let self = self else { return }
             print("Filter cleared: \(filterType)")
-            // TODO: Remove filter from active filters and refresh transactions
+            
+            // Sync with sticky filter chips
+            switch filterType {
+            case "fecha":
+                self.stickyFilterChipsView.setDateFilter(nil)
+            case "tipo":
+                self.stickyFilterChipsView.setTypeFilter(nil)
+            case "monto":
+                self.stickyFilterChipsView.setAmountFilter(nil)
+            default:
+                break
+            }
         }
         
         // Handle reset all filters
         filterChipsView.onResetAllFilters = { [weak self] in
             guard let self = self else { return }
             print("All filters reset")
-            // TODO: Clear all filters and refresh transactions
+            self.stickyFilterChipsView.clearAllFilters()
         }
         
         NSLayoutConstraint.activate([
@@ -396,28 +417,83 @@ final class CuentaViewController: UIViewController {
         stickyHeaderView.addSubview(stickyCardButton)
         stickyHeaderView.addSubview(stickyMoreButton)
         
+        // Add FilterChipsView to sticky header
+        stickyHeaderView.addSubview(stickyFilterChipsView)
+        
+        // Setup sticky filter chips callbacks
+        stickyFilterChipsView.onFilterSelected = { [weak self] filterType, anchorView in
+            self?.handleFilterSelection(filterType, anchorView: anchorView)
+        }
+        
+        stickyFilterChipsView.onFilterCleared = { [weak self] filterType in
+            guard let self = self else { return }
+            // Sync with main filterChipsView
+            switch filterType {
+            case "fecha":
+                self.filterChipsView.setDateFilter(nil)
+            case "tipo":
+                self.filterChipsView.setTypeFilter(nil)
+            case "monto":
+                self.filterChipsView.setAmountFilter(nil)
+            default:
+                break
+            }
+        }
+        
+        stickyFilterChipsView.onResetAllFilters = { [weak self] in
+            self?.filterChipsView.clearAllFilters()
+        }
+        
         // Update sticky header content
         stickyBalanceLabel.text = account.formattedBalance
         stickyAccountLabel.text = "\(account.accountType) \(account.accountNumber)"
+        
+        stickyHeightConstraint = stickyHeaderView.heightAnchor.constraint(equalToConstant: 64)
         
         NSLayoutConstraint.activate([
             stickyHeaderView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             stickyHeaderView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             stickyHeaderView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            stickyHeaderView.heightAnchor.constraint(equalToConstant: 64),
+            stickyHeightConstraint!,
             
             stickyBackButton.leadingAnchor.constraint(equalTo: stickyHeaderView.leadingAnchor, constant: 16),
-            stickyBackButton.centerYAnchor.constraint(equalTo: stickyHeaderView.centerYAnchor),
+            stickyBackButton.topAnchor.constraint(equalTo: stickyHeaderView.topAnchor, constant: 12),
             
             infoStack.leadingAnchor.constraint(equalTo: stickyBackButton.trailingAnchor, constant: 12),
-            infoStack.centerYAnchor.constraint(equalTo: stickyHeaderView.centerYAnchor),
+            infoStack.centerYAnchor.constraint(equalTo: stickyBackButton.centerYAnchor),
             
             stickyMoreButton.trailingAnchor.constraint(equalTo: stickyHeaderView.trailingAnchor, constant: -16),
-            stickyMoreButton.centerYAnchor.constraint(equalTo: stickyHeaderView.centerYAnchor),
+            stickyMoreButton.centerYAnchor.constraint(equalTo: stickyBackButton.centerYAnchor),
             
             stickyCardButton.trailingAnchor.constraint(equalTo: stickyMoreButton.leadingAnchor, constant: -10),
-            stickyCardButton.centerYAnchor.constraint(equalTo: stickyHeaderView.centerYAnchor)
+            stickyCardButton.centerYAnchor.constraint(equalTo: stickyBackButton.centerYAnchor),
+            
+            // Filter chips view
+            stickyFilterChipsView.topAnchor.constraint(equalTo: stickyBackButton.bottomAnchor, constant: 8),
+            stickyFilterChipsView.leadingAnchor.constraint(equalTo: stickyHeaderView.leadingAnchor),
+            stickyFilterChipsView.trailingAnchor.constraint(equalTo: stickyHeaderView.trailingAnchor)
         ])
+    }
+    
+    private func updateStickyHeaderFilters() {
+        // Only update if sticky header is visible
+        guard isCompactHeaderVisible else { return }
+        
+        let shouldShowFilters = isFilterVisible
+        
+        UIView.animate(withDuration: 0.2) {
+            // Show/hide sticky filter chips
+            if shouldShowFilters {
+                self.stickyFilterChipsView.isHidden = false
+                self.stickyFilterChipsView.alpha = 1
+                self.stickyHeightConstraint?.constant = 110
+            } else {
+                self.stickyFilterChipsView.isHidden = true
+                self.stickyFilterChipsView.alpha = 0
+                self.stickyHeightConstraint?.constant = 64
+            }
+            self.view.layoutIfNeeded()
+        }
     }
     
     private func updateCompactHeader(show: Bool) {
@@ -427,6 +503,17 @@ final class CuentaViewController: UIViewController {
         UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseInOut) {
             self.stickyHeaderView.alpha = show ? 1 : 0
             self.headerView.alpha = show ? 0 : 1
+            
+            // Show filter chips in sticky header if filters are active and sticky header is visible
+            if show && self.isFilterVisible {
+                self.stickyFilterChipsView.isHidden = false
+                self.stickyFilterChipsView.alpha = 1
+                self.stickyHeightConstraint?.constant = 110
+            } else if show {
+                self.stickyFilterChipsView.isHidden = true
+                self.stickyFilterChipsView.alpha = 0
+                self.stickyHeightConstraint?.constant = 64
+            }
         }
     }
     
@@ -607,6 +694,9 @@ final class CuentaViewController: UIViewController {
         } else {
             filterChipsView.hide()
         }
+        
+        // Update sticky header filters visibility
+        updateStickyHeaderFilters()
     }
     
     private func handleFilterSelection(_ filterType: String, anchorView: UIView) {
@@ -661,6 +751,7 @@ final class CuentaViewController: UIViewController {
             } else {
                 // Update chip with selected value and dismiss
                 self.filterChipsView.setDateFilter(item.title)
+                self.stickyFilterChipsView.setDateFilter(item.title)
                 self.activeDropdown?.dismiss()
                 self.activeDropdown = nil
                 self.activeFilterType = nil
@@ -683,8 +774,10 @@ final class CuentaViewController: UIViewController {
             // Update chip - show nil for "Todos" to reset
             if item.title == "Todos" {
                 self.filterChipsView.setTypeFilter(nil)
+                self.stickyFilterChipsView.setTypeFilter(nil)
             } else {
                 self.filterChipsView.setTypeFilter(item.title)
+                self.stickyFilterChipsView.setTypeFilter(item.title)
             }
             
             self.activeDropdown?.dismiss()
@@ -715,6 +808,7 @@ final class CuentaViewController: UIViewController {
                 AmountRangePickerViewController.present(from: self, delegate: self)
             } else if item.title == "Todos" {
                 self.filterChipsView.setAmountFilter(nil)
+                self.stickyFilterChipsView.setAmountFilter(nil)
                 self.activeDropdown?.dismiss()
                 self.activeDropdown = nil
                 self.activeFilterType = nil
@@ -742,6 +836,7 @@ extension CuentaViewController: DateRangePickerDelegate {
         
         let dateText = "\(formatter.string(from: startDate)) - \(formatter.string(from: endDate))"
         filterChipsView.setDateFilter(dateText)
+        stickyFilterChipsView.setDateFilter(dateText)
         
         print("Date range selected: \(dateText)")
         // TODO: Apply date filter to transactions
@@ -764,7 +859,7 @@ extension CuentaViewController: AmountRangePickerDelegate {
         if let min = minAmount, let max = maxAmount {
             let minStr = formatter.string(from: NSNumber(value: min)) ?? "$\(Int(min))"
             let maxStr = formatter.string(from: NSNumber(value: max)) ?? "$\(Int(max))"
-            amountText = "\(minStr) - \(maxStr)"
+            amountText = "\(minStr)- \(maxStr)"
         } else if let min = minAmount {
             let minStr = formatter.string(from: NSNumber(value: min)) ?? "$\(Int(min))"
             amountText = "> \(minStr)"
@@ -775,6 +870,7 @@ extension CuentaViewController: AmountRangePickerDelegate {
         
         if !amountText.isEmpty {
             filterChipsView.setAmountFilter(amountText)
+            stickyFilterChipsView.setAmountFilter(amountText)
         }
         
         print("Amount range: \(amountText)")
@@ -802,6 +898,8 @@ extension CuentaViewController: AllFiltersDelegate {
     }
     
     func allFiltersDidReset() {
+        stickyFilterChipsView.clearAllFilters()
+        filterChipsView.clearAllFilters()
         print("Filters reset")
     }
 }
