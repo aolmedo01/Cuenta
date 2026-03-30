@@ -74,7 +74,7 @@ final class DropdownMenuView: UIView {
         return stack
     }()
     
-    private let dismissTapView: UIView = {
+    private let backgroundOverlay: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
         view.backgroundColor = .clear
@@ -230,17 +230,29 @@ final class DropdownMenuView: UIView {
             }
         }
         
-        // Callback
+        // Callback - NO auto-dismiss, user must tap outside or tap filter button again
         onItemSelected?(index, items[index])
-        
-        // Dismiss after short delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-            self.dismiss()
-        }
+    }
+    
+    @objc private func backgroundTapped() {
+        dismiss()
     }
     
     // MARK: - Show/Hide
     func show(from anchorView: UIView, in parentView: UIView) {
+        // Add background overlay first to capture taps outside
+        parentView.addSubview(backgroundOverlay)
+        NSLayoutConstraint.activate([
+            backgroundOverlay.topAnchor.constraint(equalTo: parentView.topAnchor),
+            backgroundOverlay.leadingAnchor.constraint(equalTo: parentView.leadingAnchor),
+            backgroundOverlay.trailingAnchor.constraint(equalTo: parentView.trailingAnchor),
+            backgroundOverlay.bottomAnchor.constraint(equalTo: parentView.bottomAnchor)
+        ])
+        
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(backgroundTapped))
+        backgroundOverlay.addGestureRecognizer(tapGesture)
+        
+        // Add dropdown on top of overlay
         parentView.addSubview(self)
         
         // Position below anchor
@@ -266,6 +278,7 @@ final class DropdownMenuView: UIView {
             self.alpha = 0
             self.transform = CGAffineTransform(scaleX: 0.95, y: 0.95).translatedBy(x: 0, y: -10)
         } completion: { _ in
+            self.backgroundOverlay.removeFromSuperview()
             self.removeFromSuperview()
             self.onDismiss?()
         }
