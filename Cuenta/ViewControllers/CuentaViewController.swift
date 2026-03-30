@@ -724,8 +724,7 @@ final class CuentaViewController: UIViewController {
             
             switch item.title {
             case "Documentos":
-                // TODO: Navigate to documents
-                print("Navigate to Documentos")
+                self.navigateToDocuments()
             case "Configurar cuenta":
                 // TODO: Navigate to account settings
                 print("Navigate to Configurar cuenta")
@@ -755,8 +754,9 @@ final class CuentaViewController: UIViewController {
             
             switch item.title {
             case "Documentos":
-                print("Navigate to Documentos")
+                self.navigateToDocuments()
             case "Configurar cuenta":
+                // TODO: Navigate to account settings
                 print("Navigate to Configurar cuenta")
             default:
                 break
@@ -767,6 +767,11 @@ final class CuentaViewController: UIViewController {
         }
         dropdown.show(from: stickyMoreButton, in: view, alignment: .trailing)
         activeDropdown = dropdown
+    }
+    
+    private func navigateToDocuments() {
+        let documentsVC = DocumentsViewController()
+        navigationController?.pushViewController(documentsVC, animated: true)
     }
     
     @objc private func copyAccountNumber() {
