@@ -461,7 +461,7 @@ final class CuentaViewController: UIViewController {
             self.isManualMode = (segment == .manual)
             self.stickySegmentedControlView.selectedSegment = segment
             
-            // Collapse any expanded cell when switching modes
+            // Collapse current cell when switching modes
             self.currentlyExpandedCell?.collapse()
             self.currentlyExpandedCell = nil
         }
@@ -568,7 +568,7 @@ final class CuentaViewController: UIViewController {
             self.isManualMode = (segment == .manual)
             self.segmentedControlView.selectedSegment = segment
             
-            // Collapse any expanded cell when switching modes
+            // Collapse current cell when switching modes
             self.currentlyExpandedCell?.collapse()
             self.currentlyExpandedCell = nil
         }
@@ -1318,43 +1318,37 @@ extension CuentaViewController: UIScrollViewDelegate {
         let hasScrolledDown = offsetY > 10
         updateFloatingButtons(scrolledToBottom: hasScrolledDown)
         
-        // Auto-expand mode: expand cells as they enter the visible area while scrolling down
+        // Auto-expand mode: immediately expand the cell in the focus zone
         if !isManualMode {
-            let isScrollingDown = offsetY > lastScrollOffset
-            
-            if isScrollingDown {
-                checkForAutoExpand(in: scrollView)
-            }
+            expandCellInFocusZone(in: scrollView)
         }
         
         lastScrollOffset = offsetY
     }
     
-    private func checkForAutoExpand(in scrollView: UIScrollView) {
-        let visibleRect = CGRect(
-            x: 0,
-            y: scrollView.contentOffset.y,
-            width: scrollView.bounds.width,
-            height: scrollView.bounds.height
-        )
+    private func expandCellInFocusZone(in scrollView: UIScrollView) {
+        // Focus zone: upper-middle area of the screen (30-50% from top)
+        let focusZoneTop = scrollView.contentOffset.y + scrollView.bounds.height * 0.25
+        let focusZoneBottom = scrollView.contentOffset.y + scrollView.bounds.height * 0.55
         
-        // Find the first collapsed cell that is entering the visible area
+        // Find the cell whose top is within the focus zone
         for cell in allTransactionCells {
-            // Convert cell frame to scroll view coordinate space
             guard let cellFrame = cell.superview?.convert(cell.frame, to: scrollView) else { continue }
             
-            // Check if cell is entering the visible area from below (top of cell is in lower half of screen)
-            let cellTopInView = cellFrame.minY - scrollView.contentOffset.y
-            let triggerZone = scrollView.bounds.height * 0.6 // Trigger when cell enters top 60% of screen
+            let cellTop = cellFrame.minY
             
-            if cellTopInView > 0 && cellTopInView < triggerZone && !cell.isCurrentlyExpanded {
-                // Only expand one cell at a time
+            // Check if cell's top edge is within the focus zone
+            if cellTop >= focusZoneTop && cellTop <= focusZoneBottom {
+                // Only act if this is a different cell than the currently expanded one
                 if currentlyExpandedCell !== cell {
-                    currentlyExpandedCell?.collapse()
-                    cell.expand()
+                    // Instantly collapse the previous cell (no animation for speed)
+                    currentlyExpandedCell?.collapse(animated: false)
+                    
+                    // Expand the new cell with fast animation
+                    cell.expand(animated: true)
                     currentlyExpandedCell = cell
                 }
-                break
+                break // Only process one cell per scroll event
             }
         }
     }
