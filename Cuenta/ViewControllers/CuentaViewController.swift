@@ -147,7 +147,7 @@ final class CuentaViewController: UIViewController {
         let stack = UIStackView()
         stack.translatesAutoresizingMaskIntoConstraints = false
         stack.axis = .vertical
-        stack.spacing = 16
+        stack.spacing = 24
         return stack
     }()
     
@@ -317,7 +317,7 @@ final class CuentaViewController: UIViewController {
             historyStackView.topAnchor.constraint(equalTo: historyContainer.topAnchor, constant: 16),
             historyStackView.leadingAnchor.constraint(equalTo: historyContainer.leadingAnchor, constant: 16),
             historyStackView.trailingAnchor.constraint(equalTo: historyContainer.trailingAnchor, constant: -16),
-            historyStackView.bottomAnchor.constraint(equalTo: historyContainer.bottomAnchor)
+            historyStackView.bottomAnchor.constraint(equalTo: historyContainer.bottomAnchor, constant: -32)
         ])
         
         // Movimientos 2025

@@ -11,19 +11,11 @@ final class HistorySectionView: UIView {
         return label
     }()
     
-    private let containerView: UIView = {
-        let view = UIView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = .white
-        view.layer.cornerRadius = 12
-        return view
-    }()
-    
     private let stackView: UIStackView = {
         let stack = UIStackView()
         stack.translatesAutoresizingMaskIntoConstraints = false
         stack.axis = .vertical
-        stack.spacing = 0
+        stack.spacing = 8
         return stack
     }()
     
@@ -44,8 +36,7 @@ final class HistorySectionView: UIView {
         backgroundColor = .clear
         
         addSubview(headerLabel)
-        addSubview(containerView)
-        containerView.addSubview(stackView)
+        addSubview(stackView)
         
         NSLayoutConstraint.activate([
             // Header
@@ -53,17 +44,11 @@ final class HistorySectionView: UIView {
             headerLabel.leadingAnchor.constraint(equalTo: leadingAnchor),
             headerLabel.trailingAnchor.constraint(equalTo: trailingAnchor),
             
-            // Container
-            containerView.topAnchor.constraint(equalTo: headerLabel.bottomAnchor, constant: 8),
-            containerView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            containerView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            containerView.bottomAnchor.constraint(equalTo: bottomAnchor),
-            
             // Stack
-            stackView.topAnchor.constraint(equalTo: containerView.topAnchor),
-            stackView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
-            stackView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-            stackView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
+            stackView.topAnchor.constraint(equalTo: headerLabel.bottomAnchor, constant: 12),
+            stackView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            stackView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            stackView.bottomAnchor.constraint(equalTo: bottomAnchor)
         ])
     }
     

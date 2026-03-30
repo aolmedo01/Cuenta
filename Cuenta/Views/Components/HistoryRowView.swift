@@ -3,11 +3,19 @@ import UIKit
 final class HistoryRowView: UIView {
     
     // MARK: - UI Components
+    private let containerView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = UIColor(red: 0.988, green: 0.988, blue: 0.992, alpha: 1) // #FCFCFD
+        view.layer.cornerRadius = 24
+        return view
+    }()
+    
     private let titleLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = .historyRow
-        label.textColor = .textDark
+        label.font = UIFont.systemFont(ofSize: 17, weight: .semibold)
+        label.textColor = UIColor(red: 0.122, green: 0.161, blue: 0.239, alpha: 1) // #1F293D
         return label
     }()
     
@@ -15,17 +23,10 @@ final class HistoryRowView: UIView {
         let imageView = UIImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.image = UIImage(systemName: "chevron.right")?
-            .withConfiguration(UIImage.SymbolConfiguration(pointSize: 14, weight: .medium))
-        imageView.tintColor = .textSecondary
+            .withConfiguration(UIImage.SymbolConfiguration(pointSize: 12, weight: .semibold))
+        imageView.tintColor = UIColor(red: 0.129, green: 0.157, blue: 0.227, alpha: 1) // #21283A
         imageView.contentMode = .scaleAspectFit
         return imageView
-    }()
-    
-    private let separatorView: UIView = {
-        let view = UIView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = .separator
-        return view
     }()
     
     // MARK: - Properties
@@ -35,11 +36,7 @@ final class HistoryRowView: UIView {
         }
     }
     
-    var showSeparator: Bool = true {
-        didSet {
-            separatorView.isHidden = !showSeparator
-        }
-    }
+    var showSeparator: Bool = true // Kept for compatibility but no longer used
     
     var onTap: (() -> Void)?
     
@@ -63,34 +60,34 @@ final class HistoryRowView: UIView {
     // MARK: - Setup
     private func setupView() {
         translatesAutoresizingMaskIntoConstraints = false
-        backgroundColor = .white
+        backgroundColor = .clear
         
-        addSubview(titleLabel)
-        addSubview(chevronImageView)
-        addSubview(separatorView)
+        addSubview(containerView)
+        containerView.addSubview(titleLabel)
+        containerView.addSubview(chevronImageView)
         
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap))
         addGestureRecognizer(tapGesture)
         
         NSLayoutConstraint.activate([
+            // Container
+            containerView.topAnchor.constraint(equalTo: topAnchor),
+            containerView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            containerView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            containerView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            
             // Title
-            titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
-            titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
+            titleLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
+            titleLabel.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
             
             // Chevron
-            chevronImageView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-            chevronImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
-            chevronImageView.widthAnchor.constraint(equalToConstant: 12),
+            chevronImageView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+            chevronImageView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+            chevronImageView.widthAnchor.constraint(equalToConstant: 16),
             chevronImageView.heightAnchor.constraint(equalToConstant: 16),
             
-            // Separator
-            separatorView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
-            separatorView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            separatorView.bottomAnchor.constraint(equalTo: bottomAnchor),
-            separatorView.heightAnchor.constraint(equalToConstant: 1),
-            
             // Height
-            heightAnchor.constraint(equalToConstant: 48)
+            heightAnchor.constraint(equalToConstant: 43)
         ])
     }
     
