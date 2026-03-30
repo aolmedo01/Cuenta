@@ -535,7 +535,7 @@ final class CuentaViewController: UIViewController {
         
         // Movimientos por año
         let yearsSection = HistorySectionView()
-        yearsSection.configure(title: "Movimientos por año", items: ["2025", "2024", "2023", "2022"])
+        yearsSection.configure(title: "Movimientos por año", items: ["2025", "2024"])
         historyStackView.addArrangedSubview(yearsSection)
     }
     
