@@ -665,6 +665,10 @@ final class CuentaViewController: UIViewController {
             self.stickyHeaderView.alpha = show ? 1 : 0
             self.headerView.alpha = show ? 0 : 1
             
+            // Hide/show segmented controls to avoid both being visible
+            self.segmentedControlView.alpha = show ? 0 : 1
+            self.stickySegmentedControlView.alpha = show ? 1 : 0
+            
             // Show filter chips in sticky header if filters are active and sticky header is visible
             if show && self.isFilterVisible {
                 self.stickyFilterChipsView.isHidden = false
