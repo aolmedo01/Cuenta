@@ -367,47 +367,82 @@ extension AmountRangePickerViewController {
 extension AmountRangePickerViewController: UITextFieldDelegate {
     
     func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
-        // Get current text
-        let currentText = textField.text ?? ""
+        // Allow backspace
+        if string.isEmpty {
+            return true
+        }
         
-        // Calculate new text
-        guard let textRange = Range(range, in: currentText) else { return true }
-        let newText = currentText.replacingCharacters(in: textRange, with: string)
+        // Only allow numbers and decimal point
+        let allowedCharacters = CharacterSet(charactersIn: "0123456789.")
+        let characterSet = CharacterSet(charactersIn: string)
         
-        // Remove non-numeric characters except decimal point
-        let cleanedText = newText.replacingOccurrences(of: "$", with: "")
-            .replacingOccurrences(of: ",", with: "")
-            .replacingOccurrences(of: " ", with: "")
-        
-        // Allow empty string
-        if cleanedText.isEmpty {
-            textField.text = ""
+        if !allowedCharacters.isSuperset(of: characterSet) {
             return false
         }
         
-        // Validate it's a valid number
-        guard let number = Double(cleanedText) else { return false }
+        // Get current text without formatting
+        let currentText = textField.text ?? ""
+        let cleanedCurrent = currentText
+            .replacingOccurrences(of: "$", with: "")
+            .replacingOccurrences(of: ",", with: "")
+            .replacingOccurrences(of: " ", with: "")
         
-        // Format as currency
-        if let formattedText = currencyFormatter.string(from: NSNumber(value: number)) {
-            textField.text = formattedText
+        // If adding decimal point, check if one already exists
+        if string == "." && cleanedCurrent.contains(".") {
+            return false
+        }
+        
+        // Build new clean number string
+        let newCleanText = cleanedCurrent + string
+        
+        // Limit decimal places to 2
+        if let decimalIndex = newCleanText.firstIndex(of: ".") {
+            let decimalPart = newCleanText[newCleanText.index(after: decimalIndex)...]
+            if decimalPart.count > 2 {
+                return false
+            }
+        }
+        
+        // Validate it's a valid number format
+        if !newCleanText.isEmpty && Double(newCleanText) == nil && newCleanText != "." {
+            return false
+        }
+        
+        // Update text with $ prefix
+        if newCleanText.isEmpty {
+            textField.text = ""
+        } else {
+            textField.text = "$" + newCleanText
         }
         
         return false
     }
     
     func textFieldDidEndEditing(_ textField: UITextField) {
-        // Parse and store the value
+        // Parse and format the final value
         let cleanedText = (textField.text ?? "")
             .replacingOccurrences(of: "$", with: "")
             .replacingOccurrences(of: ",", with: "")
             .replacingOccurrences(of: " ", with: "")
         
         if let value = Double(cleanedText) {
+            // Format with currency
+            if let formattedText = currencyFormatter.string(from: NSNumber(value: value)) {
+                textField.text = formattedText
+            }
+            
             if textField == minAmountTextField {
                 minAmount = value
             } else if textField == maxAmountTextField {
                 maxAmount = value
+            }
+        } else {
+            // Clear invalid text
+            textField.text = ""
+            if textField == minAmountTextField {
+                minAmount = nil
+            } else if textField == maxAmountTextField {
+                maxAmount = nil
             }
         }
     }
