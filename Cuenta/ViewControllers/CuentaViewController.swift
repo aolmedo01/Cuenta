@@ -154,6 +154,45 @@ final class CuentaViewController: UIViewController {
     
     private var stickyHeightConstraint: NSLayoutConstraint?
     
+    // MARK: - Floating Action Buttons
+    private lazy var scrollToTopButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.backgroundColor = .white
+        button.layer.cornerRadius = 28
+        button.layer.shadowColor = UIColor.black.cgColor
+        button.layer.shadowOpacity = 0.15
+        button.layer.shadowOffset = CGSize(width: 0, height: 4)
+        button.layer.shadowRadius = 12
+        button.setImage(UIImage(systemName: "arrow.up")?
+            .withConfiguration(UIImage.SymbolConfiguration(pointSize: 18, weight: .medium)), for: .normal)
+        button.tintColor = UIColor(red: 0.122, green: 0.161, blue: 0.239, alpha: 1) // #1F293D
+        button.alpha = 0
+        button.isHidden = true
+        button.addTarget(self, action: #selector(scrollToTopTapped), for: .touchUpInside)
+        return button
+    }()
+    
+    private lazy var exportButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.backgroundColor = .white
+        button.layer.cornerRadius = 28
+        button.layer.shadowColor = UIColor.black.cgColor
+        button.layer.shadowOpacity = 0.15
+        button.layer.shadowOffset = CGSize(width: 0, height: 4)
+        button.layer.shadowRadius = 12
+        button.setImage(UIImage(systemName: "square.and.arrow.up")?
+            .withConfiguration(UIImage.SymbolConfiguration(pointSize: 18, weight: .medium)), for: .normal)
+        button.tintColor = .accentBlue
+        button.alpha = 0
+        button.isHidden = true
+        button.addTarget(self, action: #selector(exportTapped), for: .touchUpInside)
+        return button
+    }()
+    
+    private var hasDateFilter: Bool = false
+    
     // MARK: - Transfer Button
     private lazy var transferButton: TransferButton = {
         let button = TransferButton()
@@ -235,6 +274,7 @@ final class CuentaViewController: UIViewController {
         setupTransactions()
         setupHistory()
         setupStickyHeader()
+        setupFloatingButtons()
         
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
@@ -253,6 +293,59 @@ final class CuentaViewController: UIViewController {
             mainStackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             mainStackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -32)
         ])
+    }
+    
+    private func setupFloatingButtons() {
+        view.addSubview(scrollToTopButton)
+        view.addSubview(exportButton)
+        
+        NSLayoutConstraint.activate([
+            // Scroll to top button (left)
+            scrollToTopButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
+            scrollToTopButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -24),
+            scrollToTopButton.widthAnchor.constraint(equalToConstant: 56),
+            scrollToTopButton.heightAnchor.constraint(equalToConstant: 56),
+            
+            // Export button (right)
+            exportButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
+            exportButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -24),
+            exportButton.widthAnchor.constraint(equalToConstant: 56),
+            exportButton.heightAnchor.constraint(equalToConstant: 56)
+        ])
+    }
+    
+    private func updateFloatingButtons(scrolledToBottom: Bool) {
+        let showScrollToTop = scrolledToBottom
+        let showExport = scrolledToBottom && hasDateFilter
+        
+        UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseInOut) {
+            // Scroll to top button
+            if showScrollToTop {
+                self.scrollToTopButton.isHidden = false
+                self.scrollToTopButton.alpha = 1
+                self.scrollToTopButton.transform = .identity
+            } else {
+                self.scrollToTopButton.alpha = 0
+                self.scrollToTopButton.transform = CGAffineTransform(scaleX: 0.8, y: 0.8)
+            }
+            
+            // Export button
+            if showExport {
+                self.exportButton.isHidden = false
+                self.exportButton.alpha = 1
+                self.exportButton.transform = .identity
+            } else {
+                self.exportButton.alpha = 0
+                self.exportButton.transform = CGAffineTransform(scaleX: 0.8, y: 0.8)
+            }
+        } completion: { _ in
+            if !showScrollToTop {
+                self.scrollToTopButton.isHidden = true
+            }
+            if !showExport {
+                self.exportButton.isHidden = true
+            }
+        }
     }
     
     private func setupHeader() {
@@ -346,6 +439,7 @@ final class CuentaViewController: UIViewController {
             switch filterType {
             case "fecha":
                 self.stickyFilterChipsView.setDateFilter(nil)
+                self.hasDateFilter = false
             case "tipo":
                 self.stickyFilterChipsView.setTypeFilter(nil)
             case "monto":
@@ -360,6 +454,7 @@ final class CuentaViewController: UIViewController {
             guard let self = self else { return }
             print("All filters reset")
             self.stickyFilterChipsView.clearAllFilters()
+            self.hasDateFilter = false
         }
         
         NSLayoutConstraint.activate([
@@ -431,6 +526,7 @@ final class CuentaViewController: UIViewController {
             switch filterType {
             case "fecha":
                 self.filterChipsView.setDateFilter(nil)
+                self.hasDateFilter = false
             case "tipo":
                 self.filterChipsView.setTypeFilter(nil)
             case "monto":
@@ -442,6 +538,7 @@ final class CuentaViewController: UIViewController {
         
         stickyFilterChipsView.onResetAllFilters = { [weak self] in
             self?.filterChipsView.clearAllFilters()
+            self?.hasDateFilter = false
         }
         
         // Update sticky header content
@@ -684,6 +781,24 @@ final class CuentaViewController: UIViewController {
         print("Transfer tapped")
     }
     
+    @objc private func scrollToTopTapped() {
+        // Haptic feedback
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
+        
+        // Scroll to top with animation
+        scrollView.setContentOffset(.zero, animated: true)
+    }
+    
+    @objc private func exportTapped() {
+        // Haptic feedback
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
+        
+        print("Export transactions tapped")
+        // TODO: Implement export functionality (PDF, Excel, etc.)
+    }
+    
     @objc private func filterButtonTapped() {
         isFilterVisible.toggle()
         
@@ -758,6 +873,7 @@ final class CuentaViewController: UIViewController {
                 // Update chip with selected value and dismiss
                 self.filterChipsView.setDateFilter(item.title)
                 self.stickyFilterChipsView.setDateFilter(item.title)
+                self.hasDateFilter = true
                 self.activeDropdown?.dismiss()
                 self.activeDropdown = nil
                 self.activeFilterType = nil
@@ -843,6 +959,7 @@ extension CuentaViewController: DateRangePickerDelegate {
         let dateText = "\(formatter.string(from: startDate)) - \(formatter.string(from: endDate))"
         filterChipsView.setDateFilter(dateText)
         stickyFilterChipsView.setDateFilter(dateText)
+        hasDateFilter = true
         
         print("Date range selected: \(dateText)")
         // TODO: Apply date filter to transactions
@@ -906,6 +1023,7 @@ extension CuentaViewController: AllFiltersDelegate {
     func allFiltersDidReset() {
         stickyFilterChipsView.clearAllFilters()
         filterChipsView.clearAllFilters()
+        hasDateFilter = false
         print("Filters reset")
     }
 }
@@ -915,5 +1033,13 @@ extension CuentaViewController: UIScrollViewDelegate {
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
         let offsetY = scrollView.contentOffset.y
         updateCompactHeader(show: offsetY > scrollThreshold)
+        
+        // Check if near the bottom of the scroll view
+        let contentHeight = scrollView.contentSize.height
+        let scrollViewHeight = scrollView.frame.height
+        let bottomOffset = contentHeight - scrollViewHeight - 200 // 200px before the end
+        
+        let isNearBottom = offsetY > bottomOffset && contentHeight > scrollViewHeight
+        updateFloatingButtons(scrolledToBottom: isNearBottom)
     }
 }
