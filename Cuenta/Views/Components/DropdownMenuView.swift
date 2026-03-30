@@ -243,8 +243,13 @@ final class DropdownMenuView: UIView {
         case center
     }
     
+    enum DropdownDirection {
+        case down
+        case up
+    }
+    
     // MARK: - Show/Hide
-    func show(from anchorView: UIView, in parentView: UIView, alignment: DropdownAlignment = .leading) {
+    func show(from anchorView: UIView, in parentView: UIView, alignment: DropdownAlignment = .leading, direction: DropdownDirection = .down) {
         // Add background overlay first to capture taps outside
         parentView.addSubview(backgroundOverlay)
         NSLayoutConstraint.activate([
@@ -260,13 +265,20 @@ final class DropdownMenuView: UIView {
         // Add dropdown on top of overlay
         parentView.addSubview(self)
         
-        // Position below anchor
+        // Position relative to anchor
         let anchorFrame = anchorView.convert(anchorView.bounds, to: parentView)
         
-        var constraints = [
-            topAnchor.constraint(equalTo: parentView.topAnchor, constant: anchorFrame.maxY + 8)
-        ]
+        var constraints: [NSLayoutConstraint] = []
         
+        // Vertical positioning
+        switch direction {
+        case .down:
+            constraints.append(topAnchor.constraint(equalTo: parentView.topAnchor, constant: anchorFrame.maxY + 8))
+        case .up:
+            constraints.append(bottomAnchor.constraint(equalTo: parentView.topAnchor, constant: anchorFrame.minY - 8))
+        }
+        
+        // Horizontal positioning
         switch alignment {
         case .leading:
             constraints.append(leadingAnchor.constraint(equalTo: parentView.leadingAnchor, constant: anchorFrame.minX))
@@ -280,7 +292,8 @@ final class DropdownMenuView: UIView {
         
         // Animate in
         alpha = 0
-        transform = CGAffineTransform(scaleX: 0.95, y: 0.95).translatedBy(x: 0, y: -10)
+        let translateY: CGFloat = direction == .up ? 10 : -10
+        transform = CGAffineTransform(scaleX: 0.95, y: 0.95).translatedBy(x: 0, y: translateY)
         
         UIView.animate(withDuration: 0.25, delay: 0, usingSpringWithDamping: 0.8, initialSpringVelocity: 0.5) {
             self.alpha = 1
@@ -342,6 +355,16 @@ extension DropdownMenuView {
         menu.items = [
             DropdownMenuItem(title: "Documentos", isSelected: false),
             DropdownMenuItem(title: "Configurar cuenta", isSelected: false)
+        ]
+        return menu
+    }
+    
+    static func exportMenu() -> DropdownMenuView {
+        let menu = DropdownMenuView()
+        menu.menuWidth = 200
+        menu.items = [
+            DropdownMenuItem(title: "Compartir PDF", isSelected: false),
+            DropdownMenuItem(title: "Compartir Excel", isSelected: false)
         ]
         return menu
     }

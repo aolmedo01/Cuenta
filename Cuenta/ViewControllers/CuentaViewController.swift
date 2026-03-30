@@ -795,8 +795,198 @@ final class CuentaViewController: UIViewController {
         let generator = UIImpactFeedbackGenerator(style: .medium)
         generator.impactOccurred()
         
-        print("Export transactions tapped")
-        // TODO: Implement export functionality (PDF, Excel, etc.)
+        // Dismiss any existing dropdown
+        activeDropdown?.dismiss()
+        activeDropdown = nil
+        
+        // Show export options dropdown
+        let dropdown = DropdownMenuView.exportMenu()
+        dropdown.onItemSelected = { [weak self] index, item in
+            guard let self = self else { return }
+            
+            self.activeDropdown?.dismiss()
+            self.activeDropdown = nil
+            
+            switch item.title {
+            case "Compartir PDF":
+                self.showSharePDFModal()
+            case "Compartir Excel":
+                self.shareExcel()
+            default:
+                break
+            }
+        }
+        dropdown.onDismiss = { [weak self] in
+            self?.activeDropdown = nil
+        }
+        dropdown.show(from: exportButton, in: view, alignment: .trailing, direction: .up)
+        activeDropdown = dropdown
+    }
+    
+    // MARK: - Export Helpers
+    private func showSharePDFModal() {
+        // Hide floating buttons
+        hideFloatingButtonsForExport()
+        
+        let sharePDFVC = SharePDFViewController()
+        sharePDFVC.modalPresentationStyle = .overFullScreen
+        sharePDFVC.modalTransitionStyle = .crossDissolve
+        
+        // Configure with current date range from filter
+        sharePDFVC.dateRange = getCurrentDateRangeString()
+        sharePDFVC.userEmail = "dan_rdgz@hotmail.com" // In real app, get from user profile
+        
+        sharePDFVC.onSendEmail = { [weak self] email in
+            // Generate PDF and send via email
+            self?.generateAndSendPDF(to: email)
+            self?.showFloatingButtonsAfterExport()
+        }
+        
+        sharePDFVC.onUpdateData = { [weak self] in
+            // Navigate to update user data
+            print("Navigate to update data screen")
+            self?.showFloatingButtonsAfterExport()
+        }
+        
+        // Handle dismiss without action
+        sharePDFVC.onDismissWithoutAction = { [weak self] in
+            self?.showFloatingButtonsAfterExport()
+        }
+        
+        present(sharePDFVC, animated: false)
+    }
+    
+    private func shareExcel() {
+        // Hide floating buttons immediately
+        hideFloatingButtonsForExport()
+        
+        // Generate file in background to avoid UI delay
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self = self else { return }
+            
+            // Generate Excel file (CSV format for compatibility)
+            let fileName = self.generateExcelFileName()
+            let csvContent = self.generateCSVContent()
+            
+            // Create temporary file
+            let tempDirectory = FileManager.default.temporaryDirectory
+            let fileURL = tempDirectory.appendingPathComponent(fileName)
+            
+            do {
+                try csvContent.write(to: fileURL, atomically: true, encoding: .utf8)
+                
+                DispatchQueue.main.async {
+                    // Show share sheet
+                    let activityVC = UIActivityViewController(
+                        activityItems: [fileURL],
+                        applicationActivities: nil
+                    )
+                    
+                    // For iPad
+                    if let popover = activityVC.popoverPresentationController {
+                        popover.sourceView = self.exportButton
+                        popover.sourceRect = self.exportButton.bounds
+                    }
+                    
+                    // Restore floating buttons when share sheet is dismissed
+                    activityVC.completionWithItemsHandler = { [weak self] _, _, _, _ in
+                        self?.showFloatingButtonsAfterExport()
+                    }
+                    
+                    self.present(activityVC, animated: true)
+                }
+            } catch {
+                print("Error creating Excel file: \(error)")
+                DispatchQueue.main.async {
+                    self.showFloatingButtonsAfterExport()
+                }
+            }
+        }
+    }
+    
+    private func hideFloatingButtonsForExport() {
+        UIView.animate(withDuration: 0.2) {
+            self.scrollToTopButton.alpha = 0
+            self.exportButton.alpha = 0
+        } completion: { _ in
+            self.scrollToTopButton.isHidden = true
+            self.exportButton.isHidden = true
+        }
+    }
+    
+    private func showFloatingButtonsAfterExport() {
+        // Only show if conditions are still met
+        let contentHeight = scrollView.contentSize.height
+        let scrollViewHeight = scrollView.bounds.height
+        let offsetY = scrollView.contentOffset.y
+        let scrolledToBottom = offsetY > contentHeight - scrollViewHeight - 100
+        
+        if scrolledToBottom {
+            scrollToTopButton.isHidden = false
+            UIView.animate(withDuration: 0.25) {
+                self.scrollToTopButton.alpha = 1
+            }
+            
+            if hasDateFilter {
+                exportButton.isHidden = false
+                UIView.animate(withDuration: 0.25) {
+                    self.exportButton.alpha = 1
+                }
+            }
+        }
+    }
+    
+    private func getCurrentDateRangeString() -> String {
+        // Get date range from filter chips if set
+        // For now, return a default range
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "es_MX")
+        formatter.dateFormat = "MMMM yyyy"
+        
+        let calendar = Calendar.current
+        let now = Date()
+        let oneMonthAgo = calendar.date(byAdding: .month, value: -1, to: now) ?? now
+        
+        let startMonth = formatter.string(from: oneMonthAgo).capitalized
+        let endMonth = formatter.string(from: now).capitalized
+        
+        return "\(startMonth) - \(endMonth)"
+    }
+    
+    private func generateExcelFileName() -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd_MM_yyyy"
+        let dateString = formatter.string(from: Date())
+        return "Estado de cuenta-\(dateString).csv"
+    }
+    
+    private func generateCSVContent() -> String {
+        var csv = "Fecha,Descripción,Monto,Saldo\n"
+        
+        for section in transactionSections {
+            for transaction in section.transactions {
+                let dateFormatter = DateFormatter()
+                dateFormatter.dateFormat = "dd/MM/yyyy"
+                let dateStr = dateFormatter.string(from: transaction.date)
+                
+                let description = transaction.description.replacingOccurrences(of: ",", with: ";")
+                let amount = String(format: "%.2f", transaction.amount)
+                let balance = String(format: "%.2f", transaction.balance)
+                
+                csv += "\(dateStr),\(description),\(amount),\(balance)\n"
+            }
+        }
+        
+        return csv
+    }
+    
+    private func generateAndSendPDF(to email: String) {
+        // In a real app, this would generate a PDF and send it via backend API
+        print("Generating PDF and sending to: \(email)")
+        
+        // Show success feedback
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.success)
     }
     
     @objc private func filterButtonTapped() {
