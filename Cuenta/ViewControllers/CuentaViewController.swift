@@ -10,6 +10,8 @@ final class CuentaViewController: UIViewController {
     )
     
     private var transactionSections: [TransactionSection] = []
+    private var isCompactHeaderVisible = false
+    private var scrollThreshold: CGFloat = 160 // Threshold when header + transfer button pass
     
     // MARK: - UI Components
     private let scrollView: UIScrollView = {
@@ -99,6 +101,49 @@ final class CuentaViewController: UIViewController {
         return button
     }()
     
+    // MARK: - Sticky Compact Header
+    private let stickyHeaderView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .appBackground
+        view.alpha = 0
+        return view
+    }()
+    
+    private lazy var stickyBackButton: CircleIconButton = {
+        let button = CircleIconButton(systemName: "chevron.left")
+        button.addTarget(self, action: #selector(backTapped), for: .touchUpInside)
+        return button
+    }()
+    
+    private let stickyBalanceLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = UIFont.systemFont(ofSize: 22, weight: .bold)
+        label.textColor = .textPrimary
+        return label
+    }()
+    
+    private let stickyAccountLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = UIFont.systemFont(ofSize: 13, weight: .regular)
+        label.textColor = .textSecondary
+        return label
+    }()
+    
+    private lazy var stickyCardButton: CircleIconButton = {
+        let button = CircleIconButton(systemName: "creditcard")
+        button.addTarget(self, action: #selector(cardTapped), for: .touchUpInside)
+        return button
+    }()
+    
+    private lazy var stickyMoreButton: CircleIconButton = {
+        let button = CircleIconButton(systemName: "ellipsis")
+        button.addTarget(self, action: #selector(stickyMoreTapped), for: .touchUpInside)
+        return button
+    }()
+    
     // MARK: - Transfer Button
     private lazy var transferButton: TransferButton = {
         let button = TransferButton()
@@ -168,6 +213,8 @@ final class CuentaViewController: UIViewController {
     private func setupUI() {
         view.backgroundColor = .appBackground
         
+        scrollView.delegate = self
+        
         view.addSubview(scrollView)
         scrollView.addSubview(contentView)
         contentView.addSubview(mainStackView)
@@ -177,6 +224,7 @@ final class CuentaViewController: UIViewController {
         setupSearchBar()
         setupTransactions()
         setupHistory()
+        setupStickyHeader()
         
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
@@ -331,6 +379,57 @@ final class CuentaViewController: UIViewController {
         historyStackView.addArrangedSubview(yearsSection)
     }
     
+    private func setupStickyHeader() {
+        view.addSubview(stickyHeaderView)
+        
+        let infoStack = UIStackView()
+        infoStack.translatesAutoresizingMaskIntoConstraints = false
+        infoStack.axis = .vertical
+        infoStack.spacing = 2
+        infoStack.alignment = .leading
+        
+        infoStack.addArrangedSubview(stickyBalanceLabel)
+        infoStack.addArrangedSubview(stickyAccountLabel)
+        
+        stickyHeaderView.addSubview(stickyBackButton)
+        stickyHeaderView.addSubview(infoStack)
+        stickyHeaderView.addSubview(stickyCardButton)
+        stickyHeaderView.addSubview(stickyMoreButton)
+        
+        // Update sticky header content
+        stickyBalanceLabel.text = account.formattedBalance
+        stickyAccountLabel.text = "\(account.accountType) \(account.accountNumber)"
+        
+        NSLayoutConstraint.activate([
+            stickyHeaderView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            stickyHeaderView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            stickyHeaderView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            stickyHeaderView.heightAnchor.constraint(equalToConstant: 64),
+            
+            stickyBackButton.leadingAnchor.constraint(equalTo: stickyHeaderView.leadingAnchor, constant: 16),
+            stickyBackButton.centerYAnchor.constraint(equalTo: stickyHeaderView.centerYAnchor),
+            
+            infoStack.leadingAnchor.constraint(equalTo: stickyBackButton.trailingAnchor, constant: 12),
+            infoStack.centerYAnchor.constraint(equalTo: stickyHeaderView.centerYAnchor),
+            
+            stickyMoreButton.trailingAnchor.constraint(equalTo: stickyHeaderView.trailingAnchor, constant: -16),
+            stickyMoreButton.centerYAnchor.constraint(equalTo: stickyHeaderView.centerYAnchor),
+            
+            stickyCardButton.trailingAnchor.constraint(equalTo: stickyMoreButton.leadingAnchor, constant: -10),
+            stickyCardButton.centerYAnchor.constraint(equalTo: stickyHeaderView.centerYAnchor)
+        ])
+    }
+    
+    private func updateCompactHeader(show: Bool) {
+        guard show != isCompactHeaderVisible else { return }
+        isCompactHeaderVisible = show
+        
+        UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseInOut) {
+            self.stickyHeaderView.alpha = show ? 1 : 0
+            self.headerView.alpha = show ? 0 : 1
+        }
+    }
+    
     // MARK: - Data
     private func setupData() {
         // Sample transactions
@@ -448,6 +547,35 @@ final class CuentaViewController: UIViewController {
             self?.activeDropdown = nil
         }
         dropdown.show(from: moreButton, in: view, alignment: .trailing)
+        activeDropdown = dropdown
+    }
+    
+    @objc private func stickyMoreTapped() {
+        activeDropdown?.dismiss()
+        activeDropdown = nil
+        activeFilterType = nil
+        
+        let dropdown = DropdownMenuView.moreOptionsMenu()
+        dropdown.onItemSelected = { [weak self] index, item in
+            guard let self = self else { return }
+            print("More option selected: \(item.title)")
+            
+            self.activeDropdown?.dismiss()
+            self.activeDropdown = nil
+            
+            switch item.title {
+            case "Documentos":
+                print("Navigate to Documentos")
+            case "Configurar cuenta":
+                print("Navigate to Configurar cuenta")
+            default:
+                break
+            }
+        }
+        dropdown.onDismiss = { [weak self] in
+            self?.activeDropdown = nil
+        }
+        dropdown.show(from: stickyMoreButton, in: view, alignment: .trailing)
         activeDropdown = dropdown
     }
     
@@ -675,5 +803,13 @@ extension CuentaViewController: AllFiltersDelegate {
     
     func allFiltersDidReset() {
         print("Filters reset")
+    }
+}
+
+// MARK: - UIScrollViewDelegate
+extension CuentaViewController: UIScrollViewDelegate {
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        let offsetY = scrollView.contentOffset.y
+        updateCompactHeader(show: offsetY > scrollThreshold)
     }
 }
