@@ -3,11 +3,19 @@ import UIKit
 final class TransactionCell: UIView {
     
     // MARK: - UI Components
+    private let containerView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = UIColor(red: 0.988, green: 0.988, blue: 0.992, alpha: 1) // #FCFCFD
+        view.layer.cornerRadius = 24
+        return view
+    }()
+    
     private let iconContainer: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = .white
-        view.layer.cornerRadius = 22
+        view.backgroundColor = UIColor(red: 0.961, green: 0.965, blue: 0.973, alpha: 1) // #F5F6F8
+        view.layer.cornerRadius = 18
         return view
     }()
     
@@ -15,23 +23,23 @@ final class TransactionCell: UIView {
         let imageView = UIImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.contentMode = .scaleAspectFit
-        imageView.tintColor = .textNavy
+        imageView.tintColor = UIColor(red: 0.047, green: 0.067, blue: 0.114, alpha: 1) // #0C111D
         return imageView
     }()
     
     private let titleLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = .transactionTitle
-        label.textColor = .textDark
+        label.font = UIFont.systemFont(ofSize: 17, weight: .semibold)
+        label.textColor = UIColor(red: 0.122, green: 0.161, blue: 0.239, alpha: 1) // #1F293D
         return label
     }()
     
     private let subtitleLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = .transactionSubtitle
-        label.textColor = .textSecondary
+        label.font = UIFont.systemFont(ofSize: 15, weight: .regular)
+        label.textColor = UIColor(red: 0.424, green: 0.455, blue: 0.553, alpha: 1) // #6C748D
         return label
     }()
     
@@ -56,7 +64,7 @@ final class TransactionCell: UIView {
     private let amountLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = .transactionAmount
+        label.font = UIFont.systemFont(ofSize: 15, weight: .regular)
         label.textAlignment = .right
         return label
     }()
@@ -64,8 +72,8 @@ final class TransactionCell: UIView {
     private let balanceLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = .transactionBalance
-        label.textColor = .textSecondary
+        label.font = UIFont.systemFont(ofSize: 12, weight: .regular)
+        label.textColor = UIColor(red: 0.541, green: 0.576, blue: 0.659, alpha: 1) // #8A93A8
         label.textAlignment = .right
         return label
     }()
@@ -104,6 +112,8 @@ final class TransactionCell: UIView {
         translatesAutoresizingMaskIntoConstraints = false
         backgroundColor = .clear
         
+        addSubview(containerView)
+        
         labelsStack.addArrangedSubview(titleLabel)
         labelsStack.addArrangedSubview(subtitleLabel)
         labelsStack.addArrangedSubview(statusBadge)
@@ -112,12 +122,18 @@ final class TransactionCell: UIView {
         amountStack.addArrangedSubview(amountLabel)
         amountStack.addArrangedSubview(balanceLabel)
         
-        addSubview(iconContainer)
+        containerView.addSubview(iconContainer)
         iconContainer.addSubview(iconImageView)
-        addSubview(labelsStack)
-        addSubview(amountStack)
+        containerView.addSubview(labelsStack)
+        containerView.addSubview(amountStack)
         
         NSLayoutConstraint.activate([
+            // Container View (with bottom spacing for separation)
+            containerView.topAnchor.constraint(equalTo: topAnchor),
+            containerView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            containerView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            containerView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8),
+            
             // Status Badge
             statusBadge.heightAnchor.constraint(equalToConstant: 20),
             statusLabel.leadingAnchor.constraint(equalTo: statusBadge.leadingAnchor, constant: 8),
@@ -125,27 +141,27 @@ final class TransactionCell: UIView {
             statusLabel.centerYAnchor.constraint(equalTo: statusBadge.centerYAnchor),
             
             // Icon Container
-            iconContainer.leadingAnchor.constraint(equalTo: leadingAnchor),
-            iconContainer.centerYAnchor.constraint(equalTo: centerYAnchor),
-            iconContainer.widthAnchor.constraint(equalToConstant: 44),
-            iconContainer.heightAnchor.constraint(equalToConstant: 44),
+            iconContainer.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
+            iconContainer.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+            iconContainer.widthAnchor.constraint(equalToConstant: 36),
+            iconContainer.heightAnchor.constraint(equalToConstant: 36),
             
             // Icon Image
             iconImageView.centerXAnchor.constraint(equalTo: iconContainer.centerXAnchor),
             iconImageView.centerYAnchor.constraint(equalTo: iconContainer.centerYAnchor),
-            iconImageView.widthAnchor.constraint(equalToConstant: 20),
-            iconImageView.heightAnchor.constraint(equalToConstant: 20),
+            iconImageView.widthAnchor.constraint(equalToConstant: 18),
+            iconImageView.heightAnchor.constraint(equalToConstant: 18),
             
             // Labels Stack
-            labelsStack.leadingAnchor.constraint(equalTo: iconContainer.trailingAnchor, constant: 12),
-            labelsStack.centerYAnchor.constraint(equalTo: centerYAnchor),
-            labelsStack.trailingAnchor.constraint(lessThanOrEqualTo: amountStack.leadingAnchor, constant: -12),
+            labelsStack.leadingAnchor.constraint(equalTo: iconContainer.trailingAnchor, constant: 16),
+            labelsStack.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+            labelsStack.trailingAnchor.constraint(lessThanOrEqualTo: amountStack.leadingAnchor, constant: -24),
             
             // Amount Stack
-            amountStack.trailingAnchor.constraint(equalTo: trailingAnchor),
-            amountStack.centerYAnchor.constraint(equalTo: centerYAnchor),
+            amountStack.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+            amountStack.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
             
-            // Height
+            // Height (64px container + 8px spacing)
             heightAnchor.constraint(equalToConstant: 72)
         ])
     }

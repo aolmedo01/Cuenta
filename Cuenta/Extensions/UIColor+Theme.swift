@@ -3,7 +3,7 @@ import UIKit
 extension UIColor {
     
     // MARK: - Background Colors
-    static let appBackground = UIColor(red: 0.961, green: 0.965, blue: 0.973, alpha: 1) // #F5F6F8
+    static let appBackground = UIColor(red: 0.965, green: 0.969, blue: 0.976, alpha: 1) // #f6f7f9
     static let cardBackground = UIColor.white
     static let searchBackground = UIColor(red: 0.949, green: 0.957, blue: 0.969, alpha: 1) // #F2F4F7
     
@@ -14,7 +14,7 @@ extension UIColor {
     static let textNavy = UIColor(red: 0.086, green: 0.059, blue: 0.255, alpha: 1) // #160F41
     
     // MARK: - Amount Colors
-    static let amountPositive = UIColor(red: 0.18, green: 0.59, blue: 0.42, alpha: 1) // Verde
+    static let amountPositive = UIColor(red: 0.102, green: 0.467, blue: 0.208, alpha: 1) // #1A7735
     static let amountNegative = UIColor(red: 0.122, green: 0.161, blue: 0.239, alpha: 1) // #1F293D
     
     // MARK: - Button Colors
