@@ -237,9 +237,14 @@ final class DropdownMenuView: UIView {
     @objc private func backgroundTapped() {
         dismiss()
     }
+    enum DropdownAlignment {
+        case leading
+        case trailing
+        case center
+    }
     
     // MARK: - Show/Hide
-    func show(from anchorView: UIView, in parentView: UIView) {
+    func show(from anchorView: UIView, in parentView: UIView, alignment: DropdownAlignment = .leading) {
         // Add background overlay first to capture taps outside
         parentView.addSubview(backgroundOverlay)
         NSLayoutConstraint.activate([
@@ -258,10 +263,20 @@ final class DropdownMenuView: UIView {
         // Position below anchor
         let anchorFrame = anchorView.convert(anchorView.bounds, to: parentView)
         
-        NSLayoutConstraint.activate([
-            topAnchor.constraint(equalTo: parentView.topAnchor, constant: anchorFrame.maxY + 8),
-            leadingAnchor.constraint(equalTo: parentView.leadingAnchor, constant: anchorFrame.minX)
-        ])
+        var constraints = [
+            topAnchor.constraint(equalTo: parentView.topAnchor, constant: anchorFrame.maxY + 8)
+        ]
+        
+        switch alignment {
+        case .leading:
+            constraints.append(leadingAnchor.constraint(equalTo: parentView.leadingAnchor, constant: anchorFrame.minX))
+        case .trailing:
+            constraints.append(trailingAnchor.constraint(equalTo: parentView.trailingAnchor, constant: -(parentView.bounds.width - anchorFrame.maxX)))
+        case .center:
+            constraints.append(centerXAnchor.constraint(equalTo: parentView.leadingAnchor, constant: anchorFrame.midX))
+        }
+        
+        NSLayoutConstraint.activate(constraints)
         
         // Animate in
         alpha = 0
@@ -317,6 +332,16 @@ extension DropdownMenuView {
         menu.items = [
             DropdownMenuItem(title: "Todos", isSelected: selectedIndex == 0),
             DropdownMenuItem(title: "Personalizado", isSelected: selectedIndex == 1)
+        ]
+        return menu
+    }
+    
+    static func moreOptionsMenu() -> DropdownMenuView {
+        let menu = DropdownMenuView()
+        menu.menuWidth = 238
+        menu.items = [
+            DropdownMenuItem(title: "Documentos", isSelected: false),
+            DropdownMenuItem(title: "Configurar cuenta", isSelected: false)
         ]
         return menu
     }

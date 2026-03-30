@@ -405,7 +405,35 @@ final class CuentaViewController: UIViewController {
     }
     
     @objc private func moreTapped() {
-        print("More tapped")
+        // Dismiss filter dropdown if open
+        activeDropdown?.dismiss()
+        activeDropdown = nil
+        activeFilterType = nil
+        
+        let dropdown = DropdownMenuView.moreOptionsMenu()
+        dropdown.onItemSelected = { [weak self] index, item in
+            guard let self = self else { return }
+            print("More option selected: \(item.title)")
+            
+            self.activeDropdown?.dismiss()
+            self.activeDropdown = nil
+            
+            switch item.title {
+            case "Documentos":
+                // TODO: Navigate to documents
+                print("Navigate to Documentos")
+            case "Configurar cuenta":
+                // TODO: Navigate to account settings
+                print("Navigate to Configurar cuenta")
+            default:
+                break
+            }
+        }
+        dropdown.onDismiss = { [weak self] in
+            self?.activeDropdown = nil
+        }
+        dropdown.show(from: moreButton, in: view, alignment: .trailing)
+        activeDropdown = dropdown
     }
     
     @objc private func copyAccountNumber() {
