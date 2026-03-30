@@ -121,6 +121,16 @@ final class CuentaViewController: UIViewController {
         return view
     }()
     
+    // MARK: - Filter Chips
+    private let filterChipsView: FilterChipsView = {
+        let view = FilterChipsView()
+        view.isHidden = true
+        view.alpha = 0
+        return view
+    }()
+    
+    private var isFilterVisible = false
+    
     // MARK: - Transactions Container
     private let transactionsStackView: UIStackView = {
         let stack = UIStackView()
@@ -142,11 +152,9 @@ final class CuentaViewController: UIViewController {
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        print("✅ CuentaViewController viewDidLoad")
         setupUI()
         setupData()
         updateUI()
-        print("✅ UI Setup complete")
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -258,6 +266,17 @@ final class CuentaViewController: UIViewController {
         mainStackView.addArrangedSubview(searchContainer)
         searchContainer.addSubview(searchBarView)
         
+        // Add filter chips below search bar
+        mainStackView.addArrangedSubview(filterChipsView)
+        
+        // Wire up filter button
+        searchBarView.filterButton.addTarget(self, action: #selector(filterButtonTapped), for: .touchUpInside)
+        
+        // Handle filter selection
+        filterChipsView.onFilterSelected = { [weak self] filterType in
+            self?.handleFilterSelection(filterType)
+        }
+        
         NSLayoutConstraint.activate([
             searchContainer.heightAnchor.constraint(equalToConstant: 64),
             
@@ -333,8 +352,9 @@ final class CuentaViewController: UIViewController {
     
     // MARK: - Update UI
     private func updateUI() {
-        balanceLabel.text = account.formattedBalance
-        accountNumberLabel.text = account.formattedAccountNumber
+        // Use attributed strings for proper letter-spacing
+        balanceLabel.attributedText = .balance(account.formattedBalance)
+        accountNumberLabel.attributedText = .accountNumber(account.formattedAccountNumber)
         
         // Clear existing transactions
         transactionsStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
@@ -396,5 +416,86 @@ final class CuentaViewController: UIViewController {
     
     @objc private func transferTapped() {
         print("Transfer tapped")
+    }
+    
+    @objc private func filterButtonTapped() {
+        isFilterVisible.toggle()
+        
+        // Haptic feedback
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
+        
+        // Update filter button appearance
+        UIView.animate(withDuration: 0.2) {
+            if self.isFilterVisible {
+                // Active state - blue background, white icon
+                self.searchBarView.filterOverlay.backgroundColor = .accentBlue
+                self.searchBarView.filterButton.tintColor = .white
+            } else {
+                // Inactive state - glass background, blue icon
+                self.searchBarView.filterOverlay.backgroundColor = UIColor(red: 0.969, green: 0.969, blue: 0.969, alpha: 0.85)
+                self.searchBarView.filterButton.tintColor = .accentBlue
+            }
+        }
+        
+        // Show/hide filter chips
+        if isFilterVisible {
+            filterChipsView.show()
+        } else {
+            filterChipsView.hide()
+        }
+    }
+    
+    private func handleFilterSelection(_ filterType: String) {
+        print("Filter selected: \(filterType)")
+        
+        // Here you would show a picker or action sheet based on filter type
+        switch filterType {
+        case "fecha":
+            showDateFilterPicker()
+        case "tipo":
+            showTypeFilterPicker()
+        case "monto":
+            showAmountFilterPicker()
+        case "todos":
+            showAllFilters()
+        default:
+            break
+        }
+    }
+    
+    private func showDateFilterPicker() {
+        let alert = UIAlertController(title: "Filtrar por fecha", message: nil, preferredStyle: .actionSheet)
+        alert.addAction(UIAlertAction(title: "Hoy", style: .default))
+        alert.addAction(UIAlertAction(title: "Última semana", style: .default))
+        alert.addAction(UIAlertAction(title: "Último mes", style: .default))
+        alert.addAction(UIAlertAction(title: "Personalizado", style: .default))
+        alert.addAction(UIAlertAction(title: "Cancelar", style: .cancel))
+        present(alert, animated: true)
+    }
+    
+    private func showTypeFilterPicker() {
+        let alert = UIAlertController(title: "Filtrar por tipo", message: nil, preferredStyle: .actionSheet)
+        alert.addAction(UIAlertAction(title: "Transferencias", style: .default))
+        alert.addAction(UIAlertAction(title: "Retiros", style: .default))
+        alert.addAction(UIAlertAction(title: "Depósitos", style: .default))
+        alert.addAction(UIAlertAction(title: "Pagos", style: .default))
+        alert.addAction(UIAlertAction(title: "Cancelar", style: .cancel))
+        present(alert, animated: true)
+    }
+    
+    private func showAmountFilterPicker() {
+        let alert = UIAlertController(title: "Filtrar por monto", message: nil, preferredStyle: .actionSheet)
+        alert.addAction(UIAlertAction(title: "Menos de $100", style: .default))
+        alert.addAction(UIAlertAction(title: "$100 - $500", style: .default))
+        alert.addAction(UIAlertAction(title: "$500 - $1,000", style: .default))
+        alert.addAction(UIAlertAction(title: "Más de $1,000", style: .default))
+        alert.addAction(UIAlertAction(title: "Cancelar", style: .cancel))
+        present(alert, animated: true)
+    }
+    
+    private func showAllFilters() {
+        print("Show all filters screen")
+        // Here you would push a full filters view controller
     }
 }

@@ -8,25 +8,16 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                willConnectTo session: UISceneSession,
                options connectionOptions: UIScene.ConnectionOptions) {
         
-        print("✅ SceneDelegate scene willConnectTo")
+        guard let windowScene = (scene as? UIWindowScene) else { return }
         
-        guard let windowScene = (scene as? UIWindowScene) else {
-            print("❌ No windowScene")
-            return
-        }
-        
-        print("✅ Creating window")
         window = UIWindow(windowScene: windowScene)
         
         let cuentaVC = CuentaViewController()
-        print("✅ Created CuentaViewController")
-        
         let navigationController = UINavigationController(rootViewController: cuentaVC)
         navigationController.setNavigationBarHidden(true, animated: false)
         
         window?.rootViewController = navigationController
         window?.makeKeyAndVisible()
-        print("✅ Window is visible")
     }
     
     func sceneDidDisconnect(_ scene: UIScene) {}

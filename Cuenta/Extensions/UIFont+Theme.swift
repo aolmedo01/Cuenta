@@ -17,17 +17,21 @@ extension UIFont {
         default:
             fontName = "Manrope-Regular"
         }
-        return UIFont(name: fontName, size: size) ?? .systemFont(ofSize: size, weight: weight)
+        // Fallback to system font if Manrope is not available
+        if let font = UIFont(name: fontName, size: size) {
+            return font
+        }
+        return .systemFont(ofSize: size, weight: weight)
     }
     
     // MARK: - App Typography
     
-    /// Balance amount - 32pt Regular
+    /// Balance amount - 32pt Regular (Figma: letter-spacing -1px)
     static var balanceTitle: UIFont {
         return manrope(size: 32, weight: .regular)
     }
     
-    /// Account number subtitle - 13pt Semibold uppercase
+    /// Account number subtitle - 13pt Semibold uppercase (Figma: letter-spacing 0.3px)
     static var accountSubtitle: UIFont {
         return manrope(size: 13, weight: .semibold)
     }
@@ -70,5 +74,29 @@ extension UIFont {
     /// History row - 16pt Regular
     static var historyRow: UIFont {
         return manrope(size: 16, weight: .regular)
+    }
+}
+
+// MARK: - NSAttributedString Helpers
+extension NSAttributedString {
+    
+    /// Creates attributed string with letter spacing for balance
+    static func balance(_ text: String) -> NSAttributedString {
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: UIFont.balanceTitle,
+            .foregroundColor: UIColor.textPrimary,
+            .kern: -1.0 // letter-spacing: -1px
+        ]
+        return NSAttributedString(string: text, attributes: attributes)
+    }
+    
+    /// Creates attributed string with letter spacing for account number
+    static func accountNumber(_ text: String) -> NSAttributedString {
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: UIFont.accountSubtitle,
+            .foregroundColor: UIColor.textSecondary,
+            .kern: 0.3 // letter-spacing: 0.3px
+        ]
+        return NSAttributedString(string: text.uppercased(), attributes: attributes)
     }
 }
