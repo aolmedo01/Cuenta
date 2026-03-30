@@ -1232,12 +1232,8 @@ extension CuentaViewController: UIScrollViewDelegate {
         let offsetY = scrollView.contentOffset.y
         updateCompactHeader(show: offsetY > scrollThreshold)
         
-        // Check if near the bottom of the scroll view
-        let contentHeight = scrollView.contentSize.height
-        let scrollViewHeight = scrollView.frame.height
-        let bottomOffset = contentHeight - scrollViewHeight - 200 // 200px before the end
-        
-        let isNearBottom = offsetY > bottomOffset && contentHeight > scrollViewHeight
-        updateFloatingButtons(scrolledToBottom: isNearBottom)
+        // Show floating buttons when user scrolls down (any amount > 10px)
+        let hasScrolledDown = offsetY > 10
+        updateFloatingButtons(scrolledToBottom: hasScrolledDown)
     }
 }
