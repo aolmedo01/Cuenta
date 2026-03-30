@@ -486,8 +486,19 @@ final class CuentaViewController: UIViewController {
     private func showDateFilterDropdown(from anchorView: UIView) {
         let dropdown = DropdownMenuView.dateFilterMenu(selectedIndex: 0)
         dropdown.onItemSelected = { [weak self] index, item in
+            guard let self = self else { return }
             print("Date filter selected: \(item.title)")
-            // Apply filter logic here
+            
+            // If "Personalizado" is selected, dismiss dropdown and show date picker
+            if item.title == "Personalizado" {
+                self.activeDropdown?.dismiss()
+                self.activeDropdown = nil
+                self.activeFilterType = nil
+                
+                // Present date range picker
+                DateRangePickerViewController.present(from: self, delegate: self)
+            }
+            // For other options, just update the selection (dropdown stays open)
         }
         dropdown.onDismiss = { [weak self] in
             self?.activeDropdown = nil
@@ -514,8 +525,18 @@ final class CuentaViewController: UIViewController {
     private func showAmountFilterDropdown(from anchorView: UIView) {
         let dropdown = DropdownMenuView.amountFilterMenu()
         dropdown.onItemSelected = { [weak self] index, item in
+            guard let self = self else { return }
             print("Amount filter selected: \(item.title)")
-            // Apply filter logic here
+            
+            // If "Personalizado" is selected, dismiss dropdown and show amount range picker
+            if item.title == "Personalizado" {
+                self.activeDropdown?.dismiss()
+                self.activeDropdown = nil
+                self.activeFilterType = nil
+                
+                // TODO: Present amount range picker modal
+                print("Show custom amount range picker")
+            }
         }
         dropdown.onDismiss = { [weak self] in
             self?.activeDropdown = nil
@@ -528,5 +549,23 @@ final class CuentaViewController: UIViewController {
     private func showAllFilters() {
         print("Show all filters screen")
         // Here you would push a full filters view controller
+    }
+}
+
+// MARK: - DateRangePickerDelegate
+extension CuentaViewController: DateRangePickerDelegate {
+    func dateRangePicker(_ picker: DateRangePickerViewController, didSelectStartDate startDate: Date, endDate: Date) {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "es_ES")
+        formatter.dateFormat = "d MMM yyyy"
+        
+        print("Date range selected: \(formatter.string(from: startDate)) - \(formatter.string(from: endDate))")
+        
+        // TODO: Apply date filter to transactions
+        // You can filter transactionSections here based on the selected date range
+    }
+    
+    func dateRangePickerDidCancel(_ picker: DateRangePickerViewController) {
+        print("Date range picker cancelled")
     }
 }
