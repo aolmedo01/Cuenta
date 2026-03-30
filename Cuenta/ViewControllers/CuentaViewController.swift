@@ -130,6 +130,8 @@ final class CuentaViewController: UIViewController {
     }()
     
     private var isFilterVisible = false
+    private var activeDropdown: DropdownMenuView?
+    private var activeFilterType: String?
     
     // MARK: - Transactions Container
     private let transactionsStackView: UIStackView = {
@@ -273,8 +275,8 @@ final class CuentaViewController: UIViewController {
         searchBarView.filterButton.addTarget(self, action: #selector(filterButtonTapped), for: .touchUpInside)
         
         // Handle filter selection
-        filterChipsView.onFilterSelected = { [weak self] filterType in
-            self?.handleFilterSelection(filterType)
+        filterChipsView.onFilterSelected = { [weak self] filterType, anchorView in
+            self?.handleFilterSelection(filterType, anchorView: anchorView)
         }
         
         NSLayoutConstraint.activate([
@@ -446,17 +448,34 @@ final class CuentaViewController: UIViewController {
         }
     }
     
-    private func handleFilterSelection(_ filterType: String) {
-        print("Filter selected: \(filterType)")
+    private func handleFilterSelection(_ filterType: String, anchorView: UIView) {
+        // Haptic feedback
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
         
-        // Here you would show a picker or action sheet based on filter type
+        // If same filter is tapped again, close the dropdown
+        if activeFilterType == filterType && activeDropdown != nil {
+            activeDropdown?.dismiss()
+            activeDropdown = nil
+            activeFilterType = nil
+            return
+        }
+        
+        // Dismiss any existing dropdown
+        activeDropdown?.dismiss()
+        activeDropdown = nil
+        activeFilterType = nil
+        
         switch filterType {
         case "fecha":
-            showDateFilterPicker()
+            showDateFilterDropdown(from: anchorView)
+            activeFilterType = filterType
         case "tipo":
-            showTypeFilterPicker()
+            showTypeFilterDropdown(from: anchorView)
+            activeFilterType = filterType
         case "monto":
-            showAmountFilterPicker()
+            showAmountFilterDropdown(from: anchorView)
+            activeFilterType = filterType
         case "todos":
             showAllFilters()
         default:
@@ -464,34 +483,46 @@ final class CuentaViewController: UIViewController {
         }
     }
     
-    private func showDateFilterPicker() {
-        let alert = UIAlertController(title: "Filtrar por fecha", message: nil, preferredStyle: .actionSheet)
-        alert.addAction(UIAlertAction(title: "Hoy", style: .default))
-        alert.addAction(UIAlertAction(title: "Última semana", style: .default))
-        alert.addAction(UIAlertAction(title: "Último mes", style: .default))
-        alert.addAction(UIAlertAction(title: "Personalizado", style: .default))
-        alert.addAction(UIAlertAction(title: "Cancelar", style: .cancel))
-        present(alert, animated: true)
+    private func showDateFilterDropdown(from anchorView: UIView) {
+        let dropdown = DropdownMenuView.dateFilterMenu(selectedIndex: 0)
+        dropdown.onItemSelected = { [weak self] index, item in
+            print("Date filter selected: \(item.title)")
+            // Apply filter logic here
+        }
+        dropdown.onDismiss = { [weak self] in
+            self?.activeDropdown = nil
+            self?.activeFilterType = nil
+        }
+        dropdown.show(from: anchorView, in: view)
+        activeDropdown = dropdown
     }
     
-    private func showTypeFilterPicker() {
-        let alert = UIAlertController(title: "Filtrar por tipo", message: nil, preferredStyle: .actionSheet)
-        alert.addAction(UIAlertAction(title: "Transferencias", style: .default))
-        alert.addAction(UIAlertAction(title: "Retiros", style: .default))
-        alert.addAction(UIAlertAction(title: "Depósitos", style: .default))
-        alert.addAction(UIAlertAction(title: "Pagos", style: .default))
-        alert.addAction(UIAlertAction(title: "Cancelar", style: .cancel))
-        present(alert, animated: true)
+    private func showTypeFilterDropdown(from anchorView: UIView) {
+        let dropdown = DropdownMenuView.typeFilterMenu()
+        dropdown.onItemSelected = { [weak self] index, item in
+            print("Type filter selected: \(item.title)")
+            // Apply filter logic here
+        }
+        dropdown.onDismiss = { [weak self] in
+            self?.activeDropdown = nil
+            self?.activeFilterType = nil
+        }
+        dropdown.show(from: anchorView, in: view)
+        activeDropdown = dropdown
     }
     
-    private func showAmountFilterPicker() {
-        let alert = UIAlertController(title: "Filtrar por monto", message: nil, preferredStyle: .actionSheet)
-        alert.addAction(UIAlertAction(title: "Menos de $100", style: .default))
-        alert.addAction(UIAlertAction(title: "$100 - $500", style: .default))
-        alert.addAction(UIAlertAction(title: "$500 - $1,000", style: .default))
-        alert.addAction(UIAlertAction(title: "Más de $1,000", style: .default))
-        alert.addAction(UIAlertAction(title: "Cancelar", style: .cancel))
-        present(alert, animated: true)
+    private func showAmountFilterDropdown(from anchorView: UIView) {
+        let dropdown = DropdownMenuView.amountFilterMenu()
+        dropdown.onItemSelected = { [weak self] index, item in
+            print("Amount filter selected: \(item.title)")
+            // Apply filter logic here
+        }
+        dropdown.onDismiss = { [weak self] in
+            self?.activeDropdown = nil
+            self?.activeFilterType = nil
+        }
+        dropdown.show(from: anchorView, in: view)
+        activeDropdown = dropdown
     }
     
     private func showAllFilters() {

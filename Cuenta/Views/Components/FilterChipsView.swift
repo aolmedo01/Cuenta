@@ -76,7 +76,7 @@ final class FilterChipButton: UIButton {
 final class FilterChipsView: UIView {
     
     // MARK: - Properties
-    var onFilterSelected: ((String) -> Void)?
+    var onFilterSelected: ((String, UIView) -> Void)?
     
     // MARK: - UI Components
     private let stackView: UIStackView = {
@@ -154,7 +154,7 @@ final class FilterChipsView: UIView {
     // MARK: - Actions
     @objc private func filterTapped(_ sender: FilterChipButton) {
         let filterType = sender.accessibilityIdentifier ?? ""
-        onFilterSelected?(filterType)
+        onFilterSelected?(filterType, sender)
     }
     
     // MARK: - Animation
