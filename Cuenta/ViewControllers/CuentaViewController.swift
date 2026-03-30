@@ -279,6 +279,20 @@ final class CuentaViewController: UIViewController {
             self?.handleFilterSelection(filterType, anchorView: anchorView)
         }
         
+        // Handle filter cleared
+        filterChipsView.onFilterCleared = { [weak self] filterType in
+            guard let self = self else { return }
+            print("Filter cleared: \(filterType)")
+            // TODO: Remove filter from active filters and refresh transactions
+        }
+        
+        // Handle reset all filters
+        filterChipsView.onResetAllFilters = { [weak self] in
+            guard let self = self else { return }
+            print("All filters reset")
+            // TODO: Clear all filters and refresh transactions
+        }
+        
         NSLayoutConstraint.activate([
             searchContainer.heightAnchor.constraint(equalToConstant: 64),
             
@@ -525,8 +539,13 @@ final class CuentaViewController: UIViewController {
                 
                 // Present date range picker
                 DateRangePickerViewController.present(from: self, delegate: self)
+            } else {
+                // Update chip with selected value and dismiss
+                self.filterChipsView.setDateFilter(item.title)
+                self.activeDropdown?.dismiss()
+                self.activeDropdown = nil
+                self.activeFilterType = nil
             }
-            // For other options, just update the selection (dropdown stays open)
         }
         dropdown.onDismiss = { [weak self] in
             self?.activeDropdown = nil
@@ -539,8 +558,19 @@ final class CuentaViewController: UIViewController {
     private func showTypeFilterDropdown(from anchorView: UIView) {
         let dropdown = DropdownMenuView.typeFilterMenu()
         dropdown.onItemSelected = { [weak self] index, item in
+            guard let self = self else { return }
             print("Type filter selected: \(item.title)")
-            // Apply filter logic here
+            
+            // Update chip - show nil for "Todos" to reset
+            if item.title == "Todos" {
+                self.filterChipsView.setTypeFilter(nil)
+            } else {
+                self.filterChipsView.setTypeFilter(item.title)
+            }
+            
+            self.activeDropdown?.dismiss()
+            self.activeDropdown = nil
+            self.activeFilterType = nil
         }
         dropdown.onDismiss = { [weak self] in
             self?.activeDropdown = nil
@@ -564,6 +594,11 @@ final class CuentaViewController: UIViewController {
                 
                 // Present amount range picker
                 AmountRangePickerViewController.present(from: self, delegate: self)
+            } else if item.title == "Todos" {
+                self.filterChipsView.setAmountFilter(nil)
+                self.activeDropdown?.dismiss()
+                self.activeDropdown = nil
+                self.activeFilterType = nil
             }
         }
         dropdown.onDismiss = { [weak self] in
@@ -584,12 +619,13 @@ extension CuentaViewController: DateRangePickerDelegate {
     func dateRangePicker(_ picker: DateRangePickerViewController, didSelectStartDate startDate: Date, endDate: Date) {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "es_ES")
-        formatter.dateFormat = "d MMM yyyy"
+        formatter.dateFormat = "d MMM"
         
-        print("Date range selected: \(formatter.string(from: startDate)) - \(formatter.string(from: endDate))")
+        let dateText = "\(formatter.string(from: startDate)) - \(formatter.string(from: endDate))"
+        filterChipsView.setDateFilter(dateText)
         
+        print("Date range selected: \(dateText)")
         // TODO: Apply date filter to transactions
-        // You can filter transactionSections here based on the selected date range
     }
     
     func dateRangePickerDidCancel(_ picker: DateRangePickerViewController) {
@@ -600,17 +636,30 @@ extension CuentaViewController: DateRangePickerDelegate {
 // MARK: - AmountRangePickerDelegate
 extension CuentaViewController: AmountRangePickerDelegate {
     func amountRangePicker(_ picker: AmountRangePickerViewController, didSelectMinAmount minAmount: Double?, maxAmount: Double?) {
-        var rangeDescription = "Amount range:"
-        if let min = minAmount {
-            rangeDescription += " min $\(min)"
-        }
-        if let max = maxAmount {
-            rangeDescription += " max $\(max)"
-        }
-        print(rangeDescription)
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.locale = Locale(identifier: "en_US")
+        formatter.maximumFractionDigits = 0
         
+        var amountText = ""
+        if let min = minAmount, let max = maxAmount {
+            let minStr = formatter.string(from: NSNumber(value: min)) ?? "$\(Int(min))"
+            let maxStr = formatter.string(from: NSNumber(value: max)) ?? "$\(Int(max))"
+            amountText = "\(minStr) - \(maxStr)"
+        } else if let min = minAmount {
+            let minStr = formatter.string(from: NSNumber(value: min)) ?? "$\(Int(min))"
+            amountText = "> \(minStr)"
+        } else if let max = maxAmount {
+            let maxStr = formatter.string(from: NSNumber(value: max)) ?? "$\(Int(max))"
+            amountText = "< \(maxStr)"
+        }
+        
+        if !amountText.isEmpty {
+            filterChipsView.setAmountFilter(amountText)
+        }
+        
+        print("Amount range: \(amountText)")
         // TODO: Apply amount filter to transactions
-        // You can filter transactionSections here based on the selected amount range
     }
     
     func amountRangePickerDidCancel(_ picker: AmountRangePickerViewController) {

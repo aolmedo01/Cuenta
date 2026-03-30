@@ -3,10 +3,13 @@ import UIKit
 final class FilterChipButton: UIButton {
     
     private var hasChevron: Bool = true
+    private var isFilterSelected: Bool = false
+    private var baseTitle: String = ""
     
     // MARK: - Initialization
     init(title: String, showChevron: Bool = true) {
         self.hasChevron = showChevron
+        self.baseTitle = title
         super.init(frame: .zero)
         setupView(title: title, showChevron: showChevron)
     }
@@ -56,6 +59,53 @@ final class FilterChipButton: UIButton {
         heightAnchor.constraint(equalToConstant: 33).isActive = true
     }
     
+    // MARK: - Filter Selection
+    func setFilterValue(_ value: String?) {
+        if let value = value, !value.isEmpty {
+            isFilterSelected = true
+            setTitle("\(baseTitle): \(value)", for: .normal)
+            
+            // Keep same style as unselected - background: #FCFCFD, border: #A9B0BF, text: #515A73
+            backgroundColor = UIColor(red: 0.988, green: 0.988, blue: 0.992, alpha: 1)
+            layer.borderColor = UIColor(red: 0.663, green: 0.69, blue: 0.749, alpha: 1).cgColor
+            setTitleColor(UIColor(red: 0.318, green: 0.353, blue: 0.451, alpha: 1), for: .normal)
+            tintColor = UIColor(red: 0.663, green: 0.69, blue: 0.749, alpha: 1)
+            
+            // Change chevron to X for clearing
+            if hasChevron {
+                let xConfig = UIImage.SymbolConfiguration(pointSize: 8, weight: .medium)
+                let xImage = UIImage(systemName: "xmark", withConfiguration: xConfig)
+                setImage(xImage, for: .normal)
+            }
+        } else {
+            clearFilter()
+        }
+        invalidateIntrinsicContentSize()
+    }
+    
+    func clearFilter() {
+        isFilterSelected = false
+        setTitle(baseTitle, for: .normal)
+        
+        // Reset to default style
+        backgroundColor = UIColor(red: 0.988, green: 0.988, blue: 0.992, alpha: 1)
+        layer.borderColor = UIColor(red: 0.663, green: 0.69, blue: 0.749, alpha: 1).cgColor
+        setTitleColor(UIColor(red: 0.318, green: 0.353, blue: 0.451, alpha: 1), for: .normal)
+        tintColor = UIColor(red: 0.663, green: 0.69, blue: 0.749, alpha: 1)
+        
+        // Restore chevron
+        if hasChevron {
+            let chevronConfig = UIImage.SymbolConfiguration(pointSize: 8, weight: .medium)
+            let chevron = UIImage(systemName: "chevron.down", withConfiguration: chevronConfig)
+            setImage(chevron, for: .normal)
+        }
+        invalidateIntrinsicContentSize()
+    }
+    
+    var isFilterActive: Bool {
+        return isFilterSelected
+    }
+    
     override var intrinsicContentSize: CGSize {
         let size = super.intrinsicContentSize
         return CGSize(width: size.width + (hasChevron ? 8 : 0), height: 33)
@@ -77,8 +127,19 @@ final class FilterChipsView: UIView {
     
     // MARK: - Properties
     var onFilterSelected: ((String, UIView) -> Void)?
+    var onFilterCleared: ((String) -> Void)?
+    var onResetAllFilters: (() -> Void)?
     
     // MARK: - UI Components
+    private let scrollView: UIScrollView = {
+        let scroll = UIScrollView()
+        scroll.translatesAutoresizingMaskIntoConstraints = false
+        scroll.showsHorizontalScrollIndicator = false
+        scroll.showsVerticalScrollIndicator = false
+        scroll.alwaysBounceHorizontal = true
+        return scroll
+    }()
+    
     private let stackView: UIStackView = {
         let stack = UIStackView()
         stack.translatesAutoresizingMaskIntoConstraints = false
@@ -117,6 +178,25 @@ final class FilterChipsView: UIView {
         return button
     }()
     
+    private let separatorView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = UIColor(red: 0.663, green: 0.69, blue: 0.749, alpha: 1)
+        view.isHidden = true
+        return view
+    }()
+    
+    private lazy var resetButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.setTitle("Restablecer", for: .normal)
+        button.setTitleColor(UIColor(red: 0.318, green: 0.353, blue: 0.451, alpha: 1), for: .normal)
+        button.titleLabel?.font = UIFont.systemFont(ofSize: 11, weight: .regular)
+        button.addTarget(self, action: #selector(resetTapped), for: .touchUpInside)
+        button.isHidden = true
+        return button
+    }()
+    
     // MARK: - Initialization
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -133,28 +213,89 @@ final class FilterChipsView: UIView {
         translatesAutoresizingMaskIntoConstraints = false
         backgroundColor = .clear
         
-        addSubview(stackView)
+        addSubview(scrollView)
+        scrollView.addSubview(stackView)
         
         stackView.addArrangedSubview(fechaButton)
         stackView.addArrangedSubview(tipoButton)
         stackView.addArrangedSubview(montoButton)
         stackView.addArrangedSubview(todosButton)
+        stackView.addArrangedSubview(separatorView)
+        stackView.addArrangedSubview(resetButton)
         
-        // Same padding as searchContainer: 16px horizontal, height 65px with 16px vertical padding
         NSLayoutConstraint.activate([
             heightAnchor.constraint(equalToConstant: 65),
             
-            stackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
-            stackView.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -16),
-            stackView.centerYAnchor.constraint(equalTo: centerYAnchor),
-            stackView.heightAnchor.constraint(equalToConstant: 33)
+            scrollView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            scrollView.topAnchor.constraint(equalTo: topAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            
+            stackView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: 16),
+            stackView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor, constant: -16),
+            stackView.centerYAnchor.constraint(equalTo: scrollView.centerYAnchor),
+            stackView.heightAnchor.constraint(equalToConstant: 33),
+            
+            separatorView.widthAnchor.constraint(equalToConstant: 1),
+            separatorView.heightAnchor.constraint(equalToConstant: 20)
         ])
+    }
+    
+    // MARK: - Private Methods
+    private func updateResetButtonVisibility() {
+        let hasActiveFilters = fechaButton.isFilterActive || tipoButton.isFilterActive || montoButton.isFilterActive
+        
+        UIView.animate(withDuration: 0.2) {
+            self.separatorView.isHidden = !hasActiveFilters
+            self.resetButton.isHidden = !hasActiveFilters
+            self.separatorView.alpha = hasActiveFilters ? 1 : 0
+            self.resetButton.alpha = hasActiveFilters ? 1 : 0
+        }
+    }
+    
+    // MARK: - Public Methods
+    func setDateFilter(_ value: String?) {
+        fechaButton.setFilterValue(value)
+        updateResetButtonVisibility()
+    }
+    
+    func setTypeFilter(_ value: String?) {
+        tipoButton.setFilterValue(value)
+        updateResetButtonVisibility()
+    }
+    
+    func setAmountFilter(_ value: String?) {
+        montoButton.setFilterValue(value)
+        updateResetButtonVisibility()
+    }
+    
+    func clearAllFilters() {
+        fechaButton.clearFilter()
+        tipoButton.clearFilter()
+        montoButton.clearFilter()
+        updateResetButtonVisibility()
     }
     
     // MARK: - Actions
     @objc private func filterTapped(_ sender: FilterChipButton) {
         let filterType = sender.accessibilityIdentifier ?? ""
-        onFilterSelected?(filterType, sender)
+        
+        // If filter is active and user taps, clear it
+        if sender.isFilterActive {
+            sender.clearFilter()
+            updateResetButtonVisibility()
+            onFilterCleared?(filterType)
+        } else {
+            onFilterSelected?(filterType, sender)
+        }
+    }
+    
+    @objc private func resetTapped() {
+        clearAllFilters()
+        onResetAllFilters?()
+        
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
     }
     
     // MARK: - Animation
