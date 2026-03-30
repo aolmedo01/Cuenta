@@ -547,8 +547,7 @@ final class CuentaViewController: UIViewController {
     }
     
     private func showAllFilters() {
-        print("Show all filters screen")
-        // Here you would push a full filters view controller
+        AllFiltersViewController.present(from: self, delegate: self)
     }
 }
 
@@ -588,5 +587,25 @@ extension CuentaViewController: AmountRangePickerDelegate {
     
     func amountRangePickerDidCancel(_ picker: AmountRangePickerViewController) {
         print("Amount range picker cancelled")
+    }
+}
+
+// MARK: - AllFiltersDelegate
+extension CuentaViewController: AllFiltersDelegate {
+    func allFiltersDidApply(_ filters: AllFiltersViewController.FilterState) {
+        print("Filters applied:")
+        print("  Date: \(filters.startDate) - \(filters.endDate)")
+        print("  Type: \(filters.transactionType)")
+        print("  Amount: \(filters.minAmount ?? 0) - \(filters.maxAmount ?? 0)")
+        
+        // TODO: Apply all filters to transactions
+    }
+    
+    func allFiltersDidCancel() {
+        print("All filters cancelled")
+    }
+    
+    func allFiltersDidReset() {
+        print("Filters reset")
     }
 }
