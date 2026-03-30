@@ -37,6 +37,13 @@ struct Transaction {
     var timeRemaining: String?
     var progressRemaining: CGFloat?
     
+    // Electricity-specific properties
+    var contractNumber: String?
+    var meterNumber: String?
+    var serviceAmount: Double?
+    var commission: Double?
+    var tax: Double?
+    
     var isPositive: Bool {
         return amount >= 0
     }

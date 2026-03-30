@@ -106,12 +106,54 @@ final class TransactionCell: UIView {
         return label
     }()
     
+    // Extra labels for electricity (CNEL) type
+    private let subtitle2Label: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .manrope(size: 15, weight: .regular)
+        label.textColor = UIColor(red: 0.424, green: 0.455, blue: 0.553, alpha: 1) // #6C748D
+        label.isHidden = true
+        return label
+    }()
+    
+    private let subtitle3Label: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .manrope(size: 15, weight: .regular)
+        label.textColor = UIColor(red: 0.424, green: 0.455, blue: 0.553, alpha: 1) // #6C748D
+        label.isHidden = true
+        return label
+    }()
+    
+    private let extraBalance1Label: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .manrope(size: 12, weight: .regular)
+        label.textColor = UIColor(red: 0.541, green: 0.576, blue: 0.659, alpha: 1) // #8A93A8
+        label.textAlignment = .right
+        label.isHidden = true
+        return label
+    }()
+    
+    private let extraBalance2Label: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .manrope(size: 12, weight: .regular)
+        label.textColor = UIColor(red: 0.541, green: 0.576, blue: 0.659, alpha: 1) // #8A93A8
+        label.textAlignment = .right
+        label.isHidden = true
+        return label
+    }()
+    
+    private var isElectricityType = false
+    
     private let labelsStack: UIStackView = {
         let stack = UIStackView()
         stack.translatesAutoresizingMaskIntoConstraints = false
         stack.axis = .vertical
-        stack.spacing = 2
+        stack.spacing = 0
         stack.alignment = .leading
+        stack.distribution = .fillEqually
         return stack
     }()
     
@@ -119,8 +161,9 @@ final class TransactionCell: UIView {
         let stack = UIStackView()
         stack.translatesAutoresizingMaskIntoConstraints = false
         stack.axis = .vertical
-        stack.spacing = 2
+        stack.spacing = 0
         stack.alignment = .trailing
+        stack.distribution = .fillEqually
         return stack
     }()
     
@@ -236,10 +279,14 @@ final class TransactionCell: UIView {
         labelsStack.addArrangedSubview(titleLabel)
         labelsStack.addArrangedSubview(subtitleLabel)
         labelsStack.addArrangedSubview(statusBadge)
+        labelsStack.addArrangedSubview(subtitle2Label)
+        labelsStack.addArrangedSubview(subtitle3Label)
         statusBadge.addSubview(statusLabel)
         
         amountStack.addArrangedSubview(amountLabel)
         amountStack.addArrangedSubview(balanceLabel)
+        amountStack.addArrangedSubview(extraBalance1Label)
+        amountStack.addArrangedSubview(extraBalance2Label)
         
         containerView.addSubview(iconContainer)
         iconContainer.addSubview(iconImageView)
@@ -520,8 +567,12 @@ final class TransactionCell: UIView {
         amountLabel.text = transaction.formattedAmount
         balanceLabel.text = transaction.formattedBalance
         
-        // Amount color
-        amountLabel.textColor = transaction.isPositive ? .amountPositive : .amountNegative
+        // Amount color - electricity type uses dark color, others use positive/negative
+        if transaction.type == .electricity {
+            amountLabel.textColor = UIColor(red: 0.129, green: 0.157, blue: 0.227, alpha: 1) // #21283A
+        } else {
+            amountLabel.textColor = transaction.isPositive ? .amountPositive : .amountNegative
+        }
         
         // Status badge
         switch transaction.status {
@@ -594,6 +645,47 @@ final class TransactionCell: UIView {
         // Reference number (mock)
         let referenceNumber = String(format: "%015d", Int.random(in: 100000...999999999))
         referenciaRow.setValue(referenceNumber)
+        
+        // Check if this is electricity type (CNEL) - special compact expanded view
+        isElectricityType = transaction.type == .electricity
+        
+        if isElectricityType {
+            // Show extra info in collapsed state
+            subtitle2Label.isHidden = false
+            subtitle3Label.isHidden = false
+            extraBalance1Label.isHidden = false
+            extraBalance2Label.isHidden = false
+            
+            // Set extra info - service breakdown
+            subtitleLabel.text = "Servicio de luz"
+            subtitle2Label.text = "Comisión interbancaria"
+            subtitle3Label.text = "15% iva"
+            
+            // Format amounts
+            let serviceAmt = transaction.serviceAmount ?? 120.00
+            let commissionAmt = transaction.commission ?? 0.18
+            let taxAmt = transaction.tax ?? 0.03
+            
+            balanceLabel.text = String(format: "-$%.2f", serviceAmt)
+            extraBalance1Label.text = String(format: "-$%.2f", commissionAmt)
+            extraBalance2Label.text = String(format: "-$%.2f", taxAmt)
+            
+            // Adjust height for electricity type
+            collapsedHeight = 103
+            heightConstraint?.constant = collapsedHeight
+        } else {
+            // Hide extra labels for non-electricity transactions
+            subtitle2Label.isHidden = true
+            subtitle3Label.isHidden = true
+            extraBalance1Label.isHidden = true
+            extraBalance2Label.isHidden = true
+            
+            // Reset to normal height
+            collapsedHeight = 72
+            if !isExpanded {
+                heightConstraint?.constant = collapsedHeight
+            }
+        }
         
         // Check if this is a cardless withdrawal (Retiro sin tarjeta)
         isWithdrawalPending = transaction.type == .withdrawal && transaction.status == .toWithdraw
