@@ -9,6 +9,14 @@ enum TransactionType: String {
     case goal = "goal"
     case cardPurchase = "cardPurchase"
     case salary = "salary"
+    case electricity = "electricity"
+}
+
+// MARK: - Transaction Status
+enum TransactionStatus: String {
+    case completed = "completed"
+    case pending = "pending"
+    case toWithdraw = "toWithdraw" // Por retirar
 }
 
 // MARK: - Transaction Model
@@ -20,6 +28,7 @@ struct Transaction {
     let balance: Double
     let date: Date
     let type: TransactionType
+    var status: TransactionStatus = .completed
     
     var isPositive: Bool {
         return amount >= 0

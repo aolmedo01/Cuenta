@@ -35,6 +35,24 @@ final class TransactionCell: UIView {
         return label
     }()
     
+    private let statusBadge: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = UIColor(red: 0.906, green: 0.937, blue: 1.0, alpha: 1) // #E7EFFF
+        view.layer.cornerRadius = 10
+        view.isHidden = true
+        return view
+    }()
+    
+    private let statusLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = UIFont.systemFont(ofSize: 10, weight: .bold)
+        label.textColor = UIColor(red: 0.047, green: 0.306, blue: 0.796, alpha: 1) // #0C4ECB
+        label.textAlignment = .center
+        return label
+    }()
+    
     private let amountLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -88,6 +106,8 @@ final class TransactionCell: UIView {
         
         labelsStack.addArrangedSubview(titleLabel)
         labelsStack.addArrangedSubview(subtitleLabel)
+        labelsStack.addArrangedSubview(statusBadge)
+        statusBadge.addSubview(statusLabel)
         
         amountStack.addArrangedSubview(amountLabel)
         amountStack.addArrangedSubview(balanceLabel)
@@ -98,6 +118,12 @@ final class TransactionCell: UIView {
         addSubview(amountStack)
         
         NSLayoutConstraint.activate([
+            // Status Badge
+            statusBadge.heightAnchor.constraint(equalToConstant: 20),
+            statusLabel.leadingAnchor.constraint(equalTo: statusBadge.leadingAnchor, constant: 8),
+            statusLabel.trailingAnchor.constraint(equalTo: statusBadge.trailingAnchor, constant: -8),
+            statusLabel.centerYAnchor.constraint(equalTo: statusBadge.centerYAnchor),
+            
             // Icon Container
             iconContainer.leadingAnchor.constraint(equalTo: leadingAnchor),
             iconContainer.centerYAnchor.constraint(equalTo: centerYAnchor),
@@ -134,6 +160,21 @@ final class TransactionCell: UIView {
         // Amount color
         amountLabel.textColor = transaction.isPositive ? .amountPositive : .amountNegative
         
+        // Status badge
+        switch transaction.status {
+        case .toWithdraw:
+            statusBadge.isHidden = false
+            statusLabel.text = "Por retirar"
+            subtitleLabel.isHidden = true
+        case .pending:
+            statusBadge.isHidden = false
+            statusLabel.text = "Pendiente"
+            subtitleLabel.isHidden = true
+        case .completed:
+            statusBadge.isHidden = true
+            subtitleLabel.isHidden = false
+        }
+        
         // Icon based on type
         let iconName: String
         switch transaction.type {
@@ -151,6 +192,8 @@ final class TransactionCell: UIView {
             iconName = "creditcard"
         case .salary:
             iconName = "arrow.down"
+        case .electricity:
+            iconName = "lightbulb"
         }
         
         iconImageView.image = UIImage(systemName: iconName)?
