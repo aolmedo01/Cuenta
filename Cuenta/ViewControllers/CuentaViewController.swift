@@ -534,8 +534,8 @@ final class CuentaViewController: UIViewController {
                 self.activeDropdown = nil
                 self.activeFilterType = nil
                 
-                // TODO: Present amount range picker modal
-                print("Show custom amount range picker")
+                // Present amount range picker
+                AmountRangePickerViewController.present(from: self, delegate: self)
             }
         }
         dropdown.onDismiss = { [weak self] in
@@ -567,5 +567,26 @@ extension CuentaViewController: DateRangePickerDelegate {
     
     func dateRangePickerDidCancel(_ picker: DateRangePickerViewController) {
         print("Date range picker cancelled")
+    }
+}
+
+// MARK: - AmountRangePickerDelegate
+extension CuentaViewController: AmountRangePickerDelegate {
+    func amountRangePicker(_ picker: AmountRangePickerViewController, didSelectMinAmount minAmount: Double?, maxAmount: Double?) {
+        var rangeDescription = "Amount range:"
+        if let min = minAmount {
+            rangeDescription += " min $\(min)"
+        }
+        if let max = maxAmount {
+            rangeDescription += " max $\(max)"
+        }
+        print(rangeDescription)
+        
+        // TODO: Apply amount filter to transactions
+        // You can filter transactionSections here based on the selected amount range
+    }
+    
+    func amountRangePickerDidCancel(_ picker: AmountRangePickerViewController) {
+        print("Amount range picker cancelled")
     }
 }
