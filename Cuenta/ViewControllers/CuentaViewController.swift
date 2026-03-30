@@ -246,6 +246,10 @@ final class CuentaViewController: UIViewController {
     private var allTransactionCells: [TransactionCell] = []
     private var lastScrollOffset: CGFloat = 0
     
+    // Throttle for wave effect - minimum time between expansions
+    private var lastExpansionTime: Date = .distantPast
+    private let expansionCooldown: TimeInterval = 0.5 // seconds between expansions
+    
     private var isFilterVisible = false
     private var activeDropdown: DropdownMenuView?
     private var activeFilterType: String?
@@ -1331,6 +1335,12 @@ extension CuentaViewController: UIScrollViewDelegate {
     }
     
     private func expandCellInFocusZone(in scrollView: UIScrollView) {
+        // Check cooldown - don't expand too fast
+        let now = Date()
+        guard now.timeIntervalSince(lastExpansionTime) >= expansionCooldown else {
+            return
+        }
+        
         // Focus zone: upper-middle area of the screen (30-50% from top)
         let focusZoneTop = scrollView.contentOffset.y + scrollView.bounds.height * 0.25
         let focusZoneBottom = scrollView.contentOffset.y + scrollView.bounds.height * 0.55
@@ -1351,6 +1361,9 @@ extension CuentaViewController: UIScrollViewDelegate {
                     // Expand the new cell with wave animation
                     cell.expand(animated: true)
                     currentlyExpandedCell = cell
+                    
+                    // Update last expansion time
+                    lastExpansionTime = now
                 }
                 break // Only process one cell per scroll event
             }
