@@ -772,6 +772,11 @@ final class CuentaViewController: UIViewController {
                     }
                 }
                 
+                // Handle share button tap
+                cell.onShareTapped = { [weak self] transaction in
+                    self?.showTransactionReceipt(for: transaction)
+                }
+                
                 allTransactionCells.append(cell)
                 sectionStack.addArrangedSubview(cell)
             }
@@ -1290,6 +1295,11 @@ extension CuentaViewController: AmountRangePickerDelegate {
     
     func amountRangePickerDidCancel(_ picker: AmountRangePickerViewController) {
         print("Amount range picker cancelled")
+    }
+    // MARK: - Transaction Receipt
+    private func showTransactionReceipt(for transaction: Transaction) {
+        let receiptVC = TransactionReceiptViewController(transaction: transaction)
+        present(receiptVC, animated: true)
     }
 }
 

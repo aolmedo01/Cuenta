@@ -8,6 +8,7 @@ final class TransactionCell: UIView {
     
     private var transaction: Transaction?
     var onExpansionChanged: ((Bool) -> Void)?
+    var onShareTapped: ((Transaction) -> Void)?
     
     private var collapsedHeight: CGFloat = 72
     private var expandedHeight: CGFloat = 280
@@ -412,6 +413,9 @@ final class TransactionCell: UIView {
         let tap = UITapGestureRecognizer(target: self, action: #selector(handleTap))
         containerView.addGestureRecognizer(tap)
         containerView.isUserInteractionEnabled = true
+        
+        // Share button action
+        compartirButton.addTarget(self, action: #selector(handleShareTapped), for: .touchUpInside)
     }
     
     // MARK: - Actions
@@ -419,6 +423,13 @@ final class TransactionCell: UIView {
         let generator = UIImpactFeedbackGenerator(style: .light)
         generator.impactOccurred()
         toggleExpansion()
+    }
+    
+    @objc private func handleShareTapped() {
+        guard let transaction = transaction else { return }
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
+        onShareTapped?(transaction)
     }
     
     func toggleExpansion(animated: Bool = true) {
