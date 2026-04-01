@@ -525,22 +525,8 @@ final class TransactionCell: UIView {
     }
     
     private func playExpandAnimation(newHeight: CGFloat, detailHeight: CGFloat) {
-        // Setup highlight layer
-        highlightLayer.frame = containerView.bounds
-        highlightLayer.cornerRadius = 24
-        containerView.layer.insertSublayer(highlightLayer, at: 0)
-        
         // Initial scale down slightly
         containerView.transform = CGAffineTransform(scaleX: 0.98, y: 0.98)
-        
-        // Animate highlight fade in
-        let fadeIn = CABasicAnimation(keyPath: "opacity")
-        fadeIn.fromValue = 0
-        fadeIn.toValue = 1
-        fadeIn.duration = 0.15
-        fadeIn.fillMode = .forwards
-        fadeIn.isRemovedOnCompletion = false
-        highlightLayer.add(fadeIn, forKey: "fadeIn")
         
         // Main expansion animation with spring
         UIView.animate(withDuration: 0.4, delay: 0, usingSpringWithDamping: 0.75, initialSpringVelocity: 0.8, options: [.curveEaseOut]) {
@@ -557,24 +543,9 @@ final class TransactionCell: UIView {
             self.footerMessageLabel.alpha = self.isWithdrawalPending ? 1 : 0
             self.progressBarContainer.alpha = self.isWithdrawalPending ? 1 : 0
         }
-        
-        // Animate highlight fade out
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            let fadeOut = CABasicAnimation(keyPath: "opacity")
-            fadeOut.fromValue = 1
-            fadeOut.toValue = 0
-            fadeOut.duration = 0.3
-            fadeOut.fillMode = .forwards
-            fadeOut.isRemovedOnCompletion = false
-            self.highlightLayer.add(fadeOut, forKey: "fadeOut")
-        }
     }
     
     private func playCollapseAnimation(newHeight: CGFloat, detailHeight: CGFloat) {
-        // Remove any existing highlight
-        highlightLayer.removeAllAnimations()
-        highlightLayer.opacity = 0
-        
         // Fade out content first
         UIView.animate(withDuration: 0.15, delay: 0, options: [.curveEaseIn]) {
             self.detailContainerView.alpha = 0
