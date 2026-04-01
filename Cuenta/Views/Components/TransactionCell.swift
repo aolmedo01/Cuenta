@@ -16,6 +16,12 @@ final class TransactionCell: UIView {
     private var heightConstraint: NSLayoutConstraint?
     private var detailViewHeightConstraint: NSLayoutConstraint?
     
+    // Dynamic vertical constraints for labels and amounts
+    private var labelsStackCenterYConstraint: NSLayoutConstraint?
+    private var labelsStackTopConstraint: NSLayoutConstraint?
+    private var amountStackCenterYConstraint: NSLayoutConstraint?
+    private var amountStackTopConstraint: NSLayoutConstraint?
+    
     // Highlight layer for wave animation
     private let highlightLayer: CAGradientLayer = {
         let layer = CAGradientLayer()
@@ -37,6 +43,7 @@ final class TransactionCell: UIView {
         view.translatesAutoresizingMaskIntoConstraints = false
         view.backgroundColor = UIColor(red: 0.988, green: 0.988, blue: 0.992, alpha: 1) // #FCFCFD
         view.layer.cornerRadius = 24
+        view.clipsToBounds = true
         return view
     }()
     
@@ -171,9 +178,9 @@ final class TransactionCell: UIView {
         let stack = UIStackView()
         stack.translatesAutoresizingMaskIntoConstraints = false
         stack.axis = .vertical
-        stack.spacing = 0
+        stack.spacing = 0  // Title and subtitle naturally stacked
         stack.alignment = .leading
-        stack.distribution = .fillEqually
+        stack.distribution = .fill
         return stack
     }()
     
@@ -181,9 +188,9 @@ final class TransactionCell: UIView {
         let stack = UIStackView()
         stack.translatesAutoresizingMaskIntoConstraints = false
         stack.axis = .vertical
-        stack.spacing = 0
+        stack.spacing = 3  // gap: 3px per CSS
         stack.alignment = .trailing
-        stack.distribution = .fillEqually
+        stack.distribution = .fill
         return stack
     }()
     
@@ -251,7 +258,7 @@ final class TransactionCell: UIView {
         label.isHidden = true
         return label
     }()
-    
+
     private let footerMessageLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -310,7 +317,6 @@ final class TransactionCell: UIView {
         labelsStack.addArrangedSubview(titleLabel)
         labelsStack.addArrangedSubview(subtitleLabel)
         labelsStack.addArrangedSubview(statusBadge)
-        labelsStack.addArrangedSubview(collapsedWarningLabel)
         labelsStack.addArrangedSubview(subtitle2Label)
         labelsStack.addArrangedSubview(subtitle3Label)
         statusBadge.addSubview(statusClockIcon)
@@ -326,6 +332,7 @@ final class TransactionCell: UIView {
         iconContainer.addSubview(iconImageView)
         containerView.addSubview(labelsStack)
         containerView.addSubview(amountStack)
+        containerView.addSubview(collapsedWarningLabel)
         
         // Detail view setup
         containerView.addSubview(detailContainerView)
@@ -376,29 +383,33 @@ final class TransactionCell: UIView {
             statusTimeLabel.trailingAnchor.constraint(equalTo: statusBadge.trailingAnchor, constant: -10),
             statusTimeLabel.centerYAnchor.constraint(equalTo: statusBadge.centerYAnchor),
             
-            // Icon Container
+            // Icon Container - centered vertically with 16px padding (padding: 16px 0px)
             iconContainer.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-            iconContainer.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 14),
+            iconContainer.centerYAnchor.constraint(equalTo: containerView.topAnchor, constant: 32), // 64/2 = 32 (center of collapsed height)
             iconContainer.widthAnchor.constraint(equalToConstant: 36),
             iconContainer.heightAnchor.constraint(equalToConstant: 36),
             
-            // Icon Image
+            // Icon Image - centered with proper size
             iconImageView.centerXAnchor.constraint(equalTo: iconContainer.centerXAnchor),
             iconImageView.centerYAnchor.constraint(equalTo: iconContainer.centerYAnchor),
-            iconImageView.widthAnchor.constraint(equalToConstant: 18),
-            iconImageView.heightAnchor.constraint(equalToConstant: 18),
+            iconImageView.widthAnchor.constraint(equalToConstant: 22.5), // ~62.5% of 36px
+            iconImageView.heightAnchor.constraint(equalToConstant: 22.5),
             
-            // Labels Stack
+            // Labels Stack - 16px gap from icon, vertically centered
             labelsStack.leadingAnchor.constraint(equalTo: iconContainer.trailingAnchor, constant: 16),
-            labelsStack.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 12),
             labelsStack.trailingAnchor.constraint(lessThanOrEqualTo: amountStack.leadingAnchor, constant: -24),
             
-            // Amount Stack
+            // Amount Stack - aligned right, vertically centered
             amountStack.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
-            amountStack.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 12),
             
-            // Detail Container
-            detailContainerView.topAnchor.constraint(equalTo: labelsStack.bottomAnchor, constant: 12),
+            // Collapsed Warning Label - fixed position at bottom area of card
+            // Position: 16px from left/right, 80px from top (below title+badge area)
+            collapsedWarningLabel.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 80),
+            collapsedWarningLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
+            collapsedWarningLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+
+            // Detail Container - starts below the collapsed row area
+            detailContainerView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 56),
             detailContainerView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
             detailContainerView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
             detailViewHeightConstraint!,
@@ -440,6 +451,16 @@ final class TransactionCell: UIView {
             // Height
             heightConstraint!
         ])
+        
+        // Setup dynamic vertical constraints (start with centerY for 64px rows)
+        labelsStackCenterYConstraint = labelsStack.centerYAnchor.constraint(equalTo: containerView.topAnchor, constant: 32)
+        labelsStackTopConstraint = labelsStack.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 11)
+        amountStackCenterYConstraint = amountStack.centerYAnchor.constraint(equalTo: containerView.topAnchor, constant: 32)
+        amountStackTopConstraint = amountStack.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 11)
+        
+        // Default: centerY active for 64px rows
+        labelsStackCenterYConstraint?.isActive = true
+        amountStackCenterYConstraint?.isActive = true
         
         // Initially hide withdrawal-specific rows and progress bar
         enviadoARow.isHidden = true
@@ -608,9 +629,43 @@ final class TransactionCell: UIView {
         onExpansionChanged?(isExpanded)
     }
     
+    // MARK: - Reset State
+    private func resetCellState() {
+        // Reset heights
+        collapsedHeight = 64
+        if !isExpanded {
+            heightConstraint?.constant = collapsedHeight
+        }
+        
+        // Reset constraint modes (default: centerY for 64px)
+        labelsStackTopConstraint?.isActive = false
+        amountStackTopConstraint?.isActive = false
+        labelsStackCenterYConstraint?.isActive = true
+        amountStackCenterYConstraint?.isActive = true
+        
+        // Reset visibility
+        subtitleLabel.isHidden = false
+        statusBadge.isHidden = true
+        collapsedWarningLabel.isHidden = true
+        balanceLabel.isHidden = false
+        
+        // Reset electricity labels
+        subtitle2Label.isHidden = true
+        subtitle3Label.isHidden = true
+        extraBalance1Label.isHidden = true
+        extraBalance2Label.isHidden = true
+        
+        // Reset type flags
+        isElectricityType = false
+        isWithdrawalPending = false
+    }
+    
     // MARK: - Configuration
     func configure(with transaction: Transaction) {
         self.transaction = transaction
+        
+        // Reset all state for cell reuse
+        resetCellState()
         
         titleLabel.text = transaction.name
         subtitleLabel.text = transaction.description
@@ -639,8 +694,8 @@ final class TransactionCell: UIView {
                 statusTimeLabel.text = "23 h"
             }
             subtitleLabel.isHidden = true
-            // Adjust height for withdrawal with warning (104px per CSS)
-            collapsedHeight = 104
+            // Adjust height for withdrawal with warning - needs extra space for warning text
+            collapsedHeight = 120
             if !isExpanded {
                 heightConstraint?.constant = collapsedHeight
             }
@@ -742,6 +797,12 @@ final class TransactionCell: UIView {
             // Adjust height for electricity type
             collapsedHeight = 103
             heightConstraint?.constant = collapsedHeight
+            
+            // Switch to top alignment for 103px rows (padding 11px top)
+            labelsStackCenterYConstraint?.isActive = false
+            amountStackCenterYConstraint?.isActive = false
+            labelsStackTopConstraint?.isActive = true
+            amountStackTopConstraint?.isActive = true
         } else {
             // Hide extra labels for non-electricity transactions
             subtitle2Label.isHidden = true
@@ -754,6 +815,12 @@ final class TransactionCell: UIView {
             if !isExpanded {
                 heightConstraint?.constant = collapsedHeight
             }
+            
+            // Reset to centerY alignment for 64px rows
+            labelsStackTopConstraint?.isActive = false
+            amountStackTopConstraint?.isActive = false
+            labelsStackCenterYConstraint?.isActive = true
+            amountStackCenterYConstraint?.isActive = true
         }
         
         // Check if this is a cardless withdrawal (Retiro sin tarjeta)

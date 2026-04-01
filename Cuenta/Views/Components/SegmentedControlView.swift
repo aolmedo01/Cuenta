@@ -21,7 +21,7 @@ final class SegmentedControlView: UIView {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
         view.backgroundColor = UIColor(red: 0.463, green: 0.463, blue: 0.502, alpha: 0.12)
-        view.layer.cornerRadius = 13 // height/2 for pill shape
+        view.layer.cornerRadius = 13
         return view
     }()
     
@@ -42,11 +42,12 @@ final class SegmentedControlView: UIView {
         button.titleLabel?.font = .manrope(size: 12, weight: .medium)
         button.setTitleColor(.black, for: .normal)
         button.backgroundColor = .white
-        button.layer.cornerRadius = 11 // height/2 for pill shape
+        button.layer.cornerRadius = 11
         button.layer.shadowColor = UIColor.black.cgColor
         button.layer.shadowOpacity = 0.04
         button.layer.shadowOffset = CGSize(width: 0, height: 1)
         button.layer.shadowRadius = 1
+        button.contentEdgeInsets = .zero
         button.tag = Segment.manual.rawValue
         button.addTarget(self, action: #selector(segmentTapped(_:)), for: .touchUpInside)
         return button
@@ -64,6 +65,7 @@ final class SegmentedControlView: UIView {
         button.layer.shadowOpacity = 0
         button.layer.shadowOffset = CGSize(width: 0, height: 1)
         button.layer.shadowRadius = 1
+        button.contentEdgeInsets = .zero
         button.tag = Segment.automatico.rawValue
         button.addTarget(self, action: #selector(segmentTapped(_:)), for: .touchUpInside)
         return button

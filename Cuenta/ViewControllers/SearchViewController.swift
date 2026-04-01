@@ -71,7 +71,7 @@ final class SearchViewController: UIViewController {
         let stackView = UIStackView()
         stackView.translatesAutoresizingMaskIntoConstraints = false
         stackView.axis = .vertical
-        stackView.spacing = 8  // gap: 8px between items per CSS
+        stackView.spacing = 0
         stackView.alignment = .fill
         return stackView
     }()
@@ -302,7 +302,7 @@ final class SearchViewController: UIViewController {
         contentStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
         
         for section in filteredTransactions {
-            // Add section header with proper padding to align with transaction icons
+            // Add section header with proper padding
             let headerContainer = UIView()
             headerContainer.translatesAutoresizingMaskIntoConstraints = false
             
@@ -315,13 +315,19 @@ final class SearchViewController: UIViewController {
             headerContainer.addSubview(headerLabel)
             NSLayoutConstraint.activate([
                 headerContainer.heightAnchor.constraint(equalToConstant: 52),
-                // 16px padding to align with TransactionCell's internal icon padding
-                headerLabel.leadingAnchor.constraint(equalTo: headerContainer.leadingAnchor, constant: 16),
+                // No extra padding - label starts at edge, stack already has 16px padding
+                headerLabel.leadingAnchor.constraint(equalTo: headerContainer.leadingAnchor),
                 headerLabel.centerYAnchor.constraint(equalTo: headerContainer.centerYAnchor)
             ])
             contentStackView.addArrangedSubview(headerContainer)
             
-            // Add transactions directly - they have internal 16px padding for icon
+            // Create a section stack for transactions with 16px spacing
+            let sectionStack = UIStackView()
+            sectionStack.axis = .vertical
+            sectionStack.spacing = 16
+            sectionStack.translatesAutoresizingMaskIntoConstraints = false
+            
+            // Add transactions to section stack
             for transaction in section.transactions {
                 let cell = TransactionCell()
                 cell.configure(with: transaction)
@@ -338,10 +344,10 @@ final class SearchViewController: UIViewController {
                         }
                     }
                 }
-                
-                // Add cell directly - TransactionCell's internal padding aligns icon with header text
-                contentStackView.addArrangedSubview(cell)
+                sectionStack.addArrangedSubview(cell)
             }
+            
+            contentStackView.addArrangedSubview(sectionStack)
         }
     }
     

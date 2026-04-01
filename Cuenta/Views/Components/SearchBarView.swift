@@ -34,7 +34,7 @@ final class SearchBarView: UIView {
     private let glassOverlay: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = UIColor(red: 0.969, green: 0.969, blue: 0.969, alpha: 1.0) // #F7F7F7
+        view.backgroundColor = UIColor(red: 0.961, green: 0.961, blue: 0.961, alpha: 1.0) // #F5F5F5
         view.layer.cornerRadius = 24
         return view
     }()
@@ -93,7 +93,7 @@ final class SearchBarView: UIView {
     let filterOverlay: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = UIColor(red: 0.973, green: 0.973, blue: 0.973, alpha: 0.95) // #f8f8f8
+        view.backgroundColor = UIColor(red: 0.961, green: 0.961, blue: 0.961, alpha: 1.0) // #F5F5F5
         view.layer.cornerRadius = 24
         return view
     }()

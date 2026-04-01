@@ -744,7 +744,7 @@ final class CuentaViewController: UIViewController {
         NSLayoutConstraint.activate([
             movementsStackView.topAnchor.constraint(equalTo: movementsContentBackgroundView.topAnchor, constant: 16),
             movementsStackView.leadingAnchor.constraint(equalTo: movementsContentBackgroundView.leadingAnchor, constant: 16),
-            movementsStackView.trailingAnchor.constraint(equalTo: movementsContentBackgroundView.trailingAnchor, constant: -8),
+            movementsStackView.trailingAnchor.constraint(equalTo: movementsContentBackgroundView.trailingAnchor, constant: -16),
             movementsStackView.bottomAnchor.constraint(equalTo: movementsContentBackgroundView.bottomAnchor, constant: -32)
         ])
     }
@@ -951,7 +951,7 @@ final class CuentaViewController: UIViewController {
             let sectionStack = UIStackView()
             sectionStack.translatesAutoresizingMaskIntoConstraints = false
             sectionStack.axis = .vertical
-            sectionStack.spacing = 8
+            sectionStack.spacing = 16
             
             // Section header (skip for first section "Hoy" as it's in the segmented control row)
             if index > 0 {
