@@ -1567,7 +1567,41 @@ extension CuentaViewController: AmountRangePickerDelegate {
     // MARK: - Transaction Receipt
     private func showTransactionReceipt(for transaction: Transaction) {
         let receiptVC = TransactionReceiptViewController(transaction: transaction)
-        present(receiptVC, animated: true)
+        present(receiptVC, animated: true) { [weak self, weak receiptVC] in
+            // After modal is presented, show share sheet
+            self?.showShareSheet(for: transaction, from: receiptVC)
+        }
+    }
+    
+    private func showShareSheet(for transaction: Transaction, from viewController: UIViewController?) {
+        guard let vc = viewController else { return }
+        
+        // Create share content
+        let dateFormatter = DateFormatter()
+        dateFormatter.locale = Locale(identifier: "es_ES")
+        dateFormatter.dateFormat = "d 'de' MMMM yyyy, HH:mm"
+        
+        let shareText = """
+        Comprobante de Transacción
+        
+        \(transaction.name)
+        Monto: \(transaction.formattedAmount)
+        Fecha: \(dateFormatter.string(from: transaction.date))
+        \(transaction.description)
+        
+        Enviado desde mi app de Banco
+        """
+        
+        let activityVC = UIActivityViewController(activityItems: [shareText], applicationActivities: nil)
+        
+        // For iPad
+        if let popover = activityVC.popoverPresentationController {
+            popover.sourceView = vc.view
+            popover.sourceRect = CGRect(x: vc.view.bounds.midX, y: vc.view.bounds.midY, width: 0, height: 0)
+            popover.permittedArrowDirections = []
+        }
+        
+        vc.present(activityVC, animated: true)
     }
 }
 
