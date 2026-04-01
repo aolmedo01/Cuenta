@@ -439,6 +439,7 @@ final class CuentaViewController: UIViewController {
     private func setupFloatingButtons() {
         view.addSubview(scrollToTopButton)
         view.addSubview(exportButton)
+        view.addSubview(transferButton)
         
         NSLayoutConstraint.activate([
             // Scroll to top button (left)
@@ -451,7 +452,11 @@ final class CuentaViewController: UIViewController {
             exportButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
             exportButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -24),
             exportButton.widthAnchor.constraint(equalToConstant: 56),
-            exportButton.heightAnchor.constraint(equalToConstant: 56)
+            exportButton.heightAnchor.constraint(equalToConstant: 56),
+            
+            // Transfer button (bottom right, always visible)
+            transferButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            transferButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16)
         ])
     }
     
@@ -690,18 +695,6 @@ final class CuentaViewController: UIViewController {
             self.stickyFilterChipsView.clearAllFilters()
             self.hasDateFilter = false
         }
-        
-        // Add transfer button
-        let transferContainer = UIView()
-        transferContainer.translatesAutoresizingMaskIntoConstraints = false
-        transferContainer.addSubview(transferButton)
-        movementsStackView.addArrangedSubview(transferContainer)
-        
-        NSLayoutConstraint.activate([
-            transferContainer.heightAnchor.constraint(equalToConstant: 64),
-            transferButton.centerXAnchor.constraint(equalTo: transferContainer.centerXAnchor),
-            transferButton.centerYAnchor.constraint(equalTo: transferContainer.centerYAnchor)
-        ])
         
         // Add transactions stack
         movementsStackView.addArrangedSubview(transactionsStackView)
