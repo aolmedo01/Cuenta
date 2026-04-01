@@ -905,7 +905,6 @@ final class CuentaViewController: UIViewController {
         
         let todayTransactions: [Transaction] = [
             Transaction(id: UUID(), name: "Jessica Alfonso", description: "Movimiento interno", amount: 1600.00, balance: 1640.00, date: today, type: .transfer),
-            Transaction(id: UUID(), name: "Retiro sin tarjeta", description: "Por retirar", amount: -50.00, balance: 260.00, date: today, type: .withdrawal, status: .toWithdraw, recipientName: "María Guadalupe López Martillo", recipientPhone: "096XXXX193", timeRemaining: "23h 15m", progressRemaining: 0.7),
             Transaction(id: UUID(), name: "CNEL", description: "Pago de servicio luz", amount: -120.21, balance: 80.00, date: today, type: .electricity, serviceAmount: 120.00, commission: 0.18, tax: 0.03),
             Transaction(id: UUID(), name: "Carla Lecaro", description: "Mercado frutas", amount: -60.00, balance: 200.00, date: today, type: .payment)
         ]
