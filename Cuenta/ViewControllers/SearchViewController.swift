@@ -7,6 +7,16 @@ final class SearchViewController: UIViewController {
     private var groupedTransactions: [TransactionSection] = []
     private var filteredTransactions: [TransactionSection] = []
     
+    // Filter state
+    private var selectedDateRange: (start: Date, end: Date)?
+    private var selectedType: String?
+    private var selectedAmountRange: (min: Double, max: Double)?
+    private var currentSearchQuery: String = ""
+    
+    // Dropdown state
+    private var activeDropdown: DropdownMenuView?
+    private var activeFilterType: String?
+    
     // MARK: - UI Components
     
     private let searchContainerView: UIView = {
@@ -96,7 +106,7 @@ final class SearchViewController: UIViewController {
     // MARK: - Setup
     
     private func setupUI() {
-        view.backgroundColor = UIColor(red: 0.988, green: 0.988, blue: 0.992, alpha: 1.0) // #FCFCFD
+        view.backgroundColor = UIColor(red: 0.961, green: 0.965, blue: 0.973, alpha: 1) // #F5F6F8 - same as movements background
         
         view.addSubview(searchContainerView)
         searchContainerView.addSubview(searchIcon)
@@ -164,6 +174,14 @@ final class SearchViewController: UIViewController {
         filterChipsView.onFilterCleared = { [weak self] filterType in
             self?.handleFilterCleared(filterType)
         }
+        
+        filterChipsView.onResetAllFilters = { [weak self] in
+            guard let self = self else { return }
+            self.selectedDateRange = nil
+            self.selectedType = nil
+            self.selectedAmountRange = nil
+            self.applyFilters()
+        }
     }
     
     // MARK: - Data
@@ -174,20 +192,6 @@ final class SearchViewController: UIViewController {
         let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: today)!
         
         allTransactions = [
-            Transaction(
-                id: UUID(),
-                name: "Retiro sin tarjeta",
-                description: "",
-                amount: -50.00,
-                balance: 200.00,
-                date: today,
-                type: .withdrawal,
-                status: .toWithdraw,
-                recipientName: nil,
-                recipientPhone: nil,
-                timeRemaining: "23 h",
-                progressRemaining: 0.95
-            ),
             Transaction(
                 id: UUID(),
                 name: "Daniel Rodriguez",
@@ -246,55 +250,8 @@ final class SearchViewController: UIViewController {
             )
         ]
         
-        groupTransactionsByDate()
-        filteredTransactions = groupedTransactions
-        rebuildTransactionViews()
-    }
-    
-    private func groupTransactionsByDate() {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
-        
-        var todayTransactions: [Transaction] = []
-        var yesterdayTransactions: [Transaction] = []
-        var otherTransactions: [String: [Transaction]] = [:]
-        
-        let dateFormatter = DateFormatter()
-        dateFormatter.locale = Locale(identifier: "es_ES")
-        
-        for transaction in allTransactions {
-            let transactionDate = calendar.startOfDay(for: transaction.date)
-            
-            if transactionDate == today {
-                todayTransactions.append(transaction)
-            } else if transactionDate == yesterday {
-                yesterdayTransactions.append(transaction)
-            } else {
-                dateFormatter.dateFormat = "d MMM"
-                let dateString = dateFormatter.string(from: transaction.date)
-                if otherTransactions[dateString] == nil {
-                    otherTransactions[dateString] = []
-                }
-                otherTransactions[dateString]?.append(transaction)
-            }
-        }
-        
-        groupedTransactions = []
-        
-        if !todayTransactions.isEmpty {
-            groupedTransactions.append(TransactionSection(title: "Hoy", transactions: todayTransactions))
-        }
-        
-        if !yesterdayTransactions.isEmpty {
-            dateFormatter.dateFormat = "d MMM"
-            let yesterdayString = "Ayer " + dateFormatter.string(from: yesterday)
-            groupedTransactions.append(TransactionSection(title: yesterdayString, transactions: yesterdayTransactions))
-        }
-        
-        for (dateString, transactions) in otherTransactions.sorted(by: { $0.key > $1.key }) {
-            groupedTransactions.append(TransactionSection(title: dateString, transactions: transactions))
-        }
+        // Initial display with all transactions
+        applyFilters()
     }
     
     private func rebuildTransactionViews() {
@@ -354,30 +311,180 @@ final class SearchViewController: UIViewController {
     // MARK: - Search
     
     private func performSearch(_ query: String) {
-        if query.isEmpty {
-            filteredTransactions = groupedTransactions
-        } else {
-            let lowercasedQuery = query.lowercased()
-            filteredTransactions = groupedTransactions.compactMap { section in
-                let filteredList = section.transactions.filter { transaction in
-                    transaction.name.lowercased().contains(lowercasedQuery) ||
-                    transaction.description.lowercased().contains(lowercasedQuery)
-                }
-                return filteredList.isEmpty ? nil : TransactionSection(title: section.title, transactions: filteredList)
-            }
-        }
-        rebuildTransactionViews()
+        currentSearchQuery = query
+        applyFilters()
     }
     
     // MARK: - Filter Handling
     
     private func handleFilterSelection(_ filterType: String, anchorView: UIView) {
-        // In a real app, you would show filter pickers here
-        print("Filter selected: \(filterType)")
+        switch filterType {
+        case "fecha":
+            showDateRangePicker(anchorView: anchorView)
+        case "tipo":
+            showTypePicker(anchorView: anchorView)
+        case "monto":
+            showAmountRangePicker(anchorView: anchorView)
+        case "todos":
+            showAllFilters()
+        default:
+            break
+        }
     }
     
     private func handleFilterCleared(_ filterType: String) {
-        print("Filter cleared: \(filterType)")
+        switch filterType {
+        case "fecha":
+            selectedDateRange = nil
+        case "tipo":
+            selectedType = nil
+        case "monto":
+            selectedAmountRange = nil
+        default:
+            break
+        }
+        applyFilters()
+    }
+    
+    private func showDateRangePicker(anchorView: UIView) {
+        DateRangePickerViewController.present(from: self, delegate: self)
+    }
+    
+    private func showTypePicker(anchorView: UIView) {
+        let types = ["Transferencia", "Retiro", "Depósito", "Pago", "Meta", "Compra"]
+        
+        let alertController = UIAlertController(title: "Tipo de movimiento", message: nil, preferredStyle: .actionSheet)
+        
+        for type in types {
+            alertController.addAction(UIAlertAction(title: type, style: .default) { [weak self] _ in
+                self?.selectedType = type
+                self?.filterChipsView.setTypeFilter(type)
+                self?.applyFilters()
+            })
+        }
+        
+        alertController.addAction(UIAlertAction(title: "Cancelar", style: .cancel))
+        
+        if let popover = alertController.popoverPresentationController {
+            popover.sourceView = anchorView
+            popover.sourceRect = anchorView.bounds
+        }
+        
+        present(alertController, animated: true)
+    }
+    
+    private func showAmountRangePicker(anchorView: UIView) {
+        AmountRangePickerViewController.present(from: self, delegate: self)
+    }
+    
+    private func showAllFilters() {
+        AllFiltersViewController.present(from: self, delegate: self)
+    }
+    
+    private func applyFilters() {
+        var filtered = allTransactions
+        
+        // Apply date filter
+        if let dateRange = selectedDateRange {
+            filtered = filtered.filter { transaction in
+                transaction.date >= dateRange.start && transaction.date <= dateRange.end
+            }
+        }
+        
+        // Apply type filter
+        if let type = selectedType {
+            filtered = filtered.filter { transaction in
+                switch type.lowercased() {
+                case "transferencia":
+                    return transaction.type == .transfer
+                case "retiro":
+                    return transaction.type == .withdrawal
+                case "depósito":
+                    return transaction.type == .deposit
+                case "pago":
+                    return transaction.type == .payment || transaction.type == .electricity
+                case "meta":
+                    return transaction.type == .goal
+                case "compra":
+                    return transaction.type == .cardPurchase
+                default:
+                    return true
+                }
+            }
+        }
+        
+        // Apply amount filter
+        if let amountRange = selectedAmountRange {
+            filtered = filtered.filter { transaction in
+                let absAmount = abs(transaction.amount)
+                return absAmount >= amountRange.min && absAmount <= amountRange.max
+            }
+        }
+        
+        // Apply search query
+        if !currentSearchQuery.isEmpty {
+            let query = currentSearchQuery.lowercased()
+            filtered = filtered.filter { transaction in
+                transaction.name.lowercased().contains(query) ||
+                transaction.description.lowercased().contains(query)
+            }
+        }
+        
+        // Group by date
+        groupAndDisplayTransactions(filtered)
+    }
+    
+    private func groupAndDisplayTransactions(_ transactions: [Transaction]) {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
+        
+        var todayList: [Transaction] = []
+        var yesterdayList: [Transaction] = []
+        var olderByDate: [Date: [Transaction]] = [:]
+        
+        for transaction in transactions {
+            let transactionDay = calendar.startOfDay(for: transaction.date)
+            
+            if transactionDay == today {
+                todayList.append(transaction)
+            } else if transactionDay == yesterday {
+                yesterdayList.append(transaction)
+            } else {
+                if olderByDate[transactionDay] == nil {
+                    olderByDate[transactionDay] = []
+                }
+                olderByDate[transactionDay]?.append(transaction)
+            }
+        }
+        
+        var sections: [TransactionSection] = []
+        
+        if !todayList.isEmpty {
+            sections.append(TransactionSection(title: "Hoy", transactions: todayList))
+        }
+        
+        if !yesterdayList.isEmpty {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "d MMM"
+            formatter.locale = Locale(identifier: "es_ES")
+            sections.append(TransactionSection(title: "Ayer \(formatter.string(from: yesterday))", transactions: yesterdayList))
+        }
+        
+        // Sort older dates and add sections
+        let sortedDates = olderByDate.keys.sorted(by: >)
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "d MMM"
+        dateFormatter.locale = Locale(identifier: "es_ES")
+        
+        for date in sortedDates {
+            if let transactions = olderByDate[date] {
+                sections.append(TransactionSection(title: dateFormatter.string(from: date), transactions: transactions))
+            }
+        }
+        
+        filteredTransactions = sections
+        rebuildTransactionViews()
     }
     
     // MARK: - Actions
@@ -407,5 +514,111 @@ extension SearchViewController: UITextFieldDelegate {
     func textFieldShouldClear(_ textField: UITextField) -> Bool {
         performSearch("")
         return true
+    }
+}
+
+// MARK: - UIPopoverPresentationControllerDelegate
+
+extension SearchViewController: UIPopoverPresentationControllerDelegate {
+    func adaptivePresentationStyle(for controller: UIPresentationController) -> UIModalPresentationStyle {
+        return .none
+    }
+}
+
+// MARK: - DateRangePickerDelegate
+
+extension SearchViewController: DateRangePickerDelegate {
+    func dateRangePicker(_ picker: DateRangePickerViewController, didSelectStartDate startDate: Date, endDate: Date) {
+        selectedDateRange = (startDate, endDate)
+        
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "es_ES")
+        formatter.dateFormat = "d MMM"
+        
+        let dateText = "\(formatter.string(from: startDate)) - \(formatter.string(from: endDate))"
+        filterChipsView.setDateFilter(dateText)
+        
+        applyFilters()
+    }
+    
+    func dateRangePickerDidCancel(_ picker: DateRangePickerViewController) {
+        // Nothing to do
+    }
+}
+
+// MARK: - AmountRangePickerDelegate
+
+extension SearchViewController: AmountRangePickerDelegate {
+    func amountRangePicker(_ picker: AmountRangePickerViewController, didSelectMinAmount minAmount: Double?, maxAmount: Double?) {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.locale = Locale(identifier: "en_US")
+        formatter.maximumFractionDigits = 0
+        
+        var amountText = ""
+        if let min = minAmount, let max = maxAmount {
+            selectedAmountRange = (min, max)
+            let minStr = formatter.string(from: NSNumber(value: min)) ?? "$\(Int(min))"
+            let maxStr = formatter.string(from: NSNumber(value: max)) ?? "$\(Int(max))"
+            amountText = "\(minStr)- \(maxStr)"
+        } else if let min = minAmount {
+            selectedAmountRange = (min, Double.greatestFiniteMagnitude)
+            let minStr = formatter.string(from: NSNumber(value: min)) ?? "$\(Int(min))"
+            amountText = "> \(minStr)"
+        } else if let max = maxAmount {
+            selectedAmountRange = (0, max)
+            let maxStr = formatter.string(from: NSNumber(value: max)) ?? "$\(Int(max))"
+            amountText = "< \(maxStr)"
+        }
+        
+        if !amountText.isEmpty {
+            filterChipsView.setAmountFilter(amountText)
+        }
+        
+        applyFilters()
+    }
+    
+    func amountRangePickerDidCancel(_ picker: AmountRangePickerViewController) {
+        // Nothing to do
+    }
+}
+
+// MARK: - AllFiltersDelegate
+
+extension SearchViewController: AllFiltersDelegate {
+    func allFiltersDidApply(_ filters: AllFiltersViewController.FilterState) {
+        // Apply date filter
+        selectedDateRange = (filters.startDate, filters.endDate)
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "es_ES")
+        formatter.dateFormat = "d MMM"
+        let dateText = "\(formatter.string(from: filters.startDate)) - \(formatter.string(from: filters.endDate))"
+        filterChipsView.setDateFilter(dateText)
+        
+        // Apply type filter
+        if filters.transactionType != "Todos" {
+            selectedType = filters.transactionType
+            filterChipsView.setTypeFilter(filters.transactionType)
+        }
+        
+        // Apply amount filter
+        if let min = filters.minAmount, let max = filters.maxAmount {
+            selectedAmountRange = (min, max)
+            filterChipsView.setAmountFilter("$\(Int(min)) - $\(Int(max))")
+        }
+        
+        applyFilters()
+    }
+    
+    func allFiltersDidCancel() {
+        // Nothing to do
+    }
+    
+    func allFiltersDidReset() {
+        selectedDateRange = nil
+        selectedType = nil
+        selectedAmountRange = nil
+        filterChipsView.clearAllFilters()
+        applyFilters()
     }
 }
