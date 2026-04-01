@@ -62,6 +62,8 @@ final class CuentaViewController: UIViewController {
     
     private let headerGradientLayer = CAGradientLayer()
     private let headerGlowLayer = CAGradientLayer()
+    private let stickyGradientLayer = CAGradientLayer()
+    private let stickyGlowLayer = CAGradientLayer()
     private var headerViewHeightConstraint: NSLayoutConstraint?
     private var headerCardHeightConstraint: NSLayoutConstraint?
     private var headerCardTopConstraint: NSLayoutConstraint?
@@ -170,8 +172,9 @@ final class CuentaViewController: UIViewController {
     private let stickyHeaderView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = .appBackground
+        view.backgroundColor = .clear
         view.alpha = 0
+        view.clipsToBounds = true
         return view
     }()
     
@@ -185,15 +188,15 @@ final class CuentaViewController: UIViewController {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
         label.font = UIFont.systemFont(ofSize: 22, weight: .bold)
-        label.textColor = .textPrimary
+        label.textColor = .white
         return label
     }()
     
     private let stickyAccountLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = UIFont.systemFont(ofSize: 13, weight: .regular)
-        label.textColor = .textSecondary
+        label.font = UIFont.systemFont(ofSize: 11, weight: .medium)
+        label.textColor = .white.withAlphaComponent(0.8)
         return label
     }()
     
@@ -404,6 +407,17 @@ final class CuentaViewController: UIViewController {
         headerGradientLayer.frame = headerCardView.bounds
         headerGlowLayer.frame = headerCardView.bounds
         movementsTopShadowLayer.frame = movementsTopShadowView.bounds
+        stickyGradientLayer.frame = stickyHeaderView.bounds
+        stickyGlowLayer.frame = stickyHeaderView.bounds
+        
+        // Update sticky header height based on current state
+        if isCompactHeaderVisible {
+            if isFilterVisible {
+                stickyHeightConstraint?.constant = 170 + topInset
+            } else {
+                stickyHeightConstraint?.constant = 100 + topInset
+            }
+        }
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -752,6 +766,28 @@ final class CuentaViewController: UIViewController {
     private func setupStickyHeader() {
         view.addSubview(stickyHeaderView)
         
+        // Setup gradient background for sticky header
+        stickyGradientLayer.colors = [
+            UIColor(red: 0.85, green: 0.0, blue: 0.45, alpha: 1).cgColor,
+            UIColor(red: 0.74, green: 0.0, blue: 0.56, alpha: 1).cgColor
+        ]
+        stickyGradientLayer.startPoint = CGPoint(x: 0.15, y: 0.0)
+        stickyGradientLayer.endPoint = CGPoint(x: 0.85, y: 1.0)
+        stickyHeaderView.layer.insertSublayer(stickyGradientLayer, at: 0)
+        
+        stickyGlowLayer.colors = [
+            UIColor.white.withAlphaComponent(0.22).cgColor,
+            UIColor.clear.cgColor
+        ]
+        stickyGlowLayer.startPoint = CGPoint(x: 0.5, y: 0.0)
+        stickyGlowLayer.endPoint = CGPoint(x: 0.5, y: 0.45)
+        stickyHeaderView.layer.insertSublayer(stickyGlowLayer, above: stickyGradientLayer)
+        
+        // Apply light on dark style to buttons
+        stickyBackButton.applyStyle(.lightOnDark)
+        stickyCardButton.applyStyle(.lightOnDark)
+        stickyMoreButton.applyStyle(.lightOnDark)
+        
         let infoStack = UIStackView()
         infoStack.translatesAutoresizingMaskIntoConstraints = false
         infoStack.axis = .vertical
@@ -768,20 +804,6 @@ final class CuentaViewController: UIViewController {
         
         // Add FilterChipsView to sticky header
         stickyHeaderView.addSubview(stickyFilterChipsView)
-        
-        // Add segmented control to sticky header
-        stickyHeaderView.addSubview(stickySegmentedControlView)
-        
-        stickySegmentedControlView.onSegmentChanged = { [weak self] segment in
-            guard let self = self else { return }
-            print("Sticky segment changed to: \(segment == .manual ? "Manual" : "Automático")")
-            self.isManualMode = (segment == .manual)
-            self.segmentedControlView.selectedSegment = segment
-            
-            // Collapse current cell when switching modes
-            self.currentlyExpandedCell?.collapse()
-            self.currentlyExpandedCell = nil
-        }
         
         // Setup sticky filter chips callbacks
         stickyFilterChipsView.onFilterSelected = { [weak self] filterType, anchorView in
@@ -813,16 +835,18 @@ final class CuentaViewController: UIViewController {
         stickyBalanceLabel.text = account.formattedBalance
         stickyAccountLabel.text = "\(account.accountType) \(account.accountNumber)"
         
-        stickyHeightConstraint = stickyHeaderView.heightAnchor.constraint(equalToConstant: 100)
+        stickyHeightConstraint = stickyHeaderView.heightAnchor.constraint(equalToConstant: 160) // Will be updated with safe area
         
         NSLayoutConstraint.activate([
-            stickyHeaderView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            // Extend to top of screen (behind status bar)
+            stickyHeaderView.topAnchor.constraint(equalTo: view.topAnchor),
             stickyHeaderView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             stickyHeaderView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             stickyHeightConstraint!,
             
+            // Position elements below safe area
             stickyBackButton.leadingAnchor.constraint(equalTo: stickyHeaderView.leadingAnchor, constant: 16),
-            stickyBackButton.topAnchor.constraint(equalTo: stickyHeaderView.topAnchor, constant: 12),
+            stickyBackButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 12),
             
             infoStack.leadingAnchor.constraint(equalTo: stickyBackButton.trailingAnchor, constant: 12),
             infoStack.centerYAnchor.constraint(equalTo: stickyBackButton.centerYAnchor),
@@ -836,11 +860,7 @@ final class CuentaViewController: UIViewController {
             // Filter chips view
             stickyFilterChipsView.topAnchor.constraint(equalTo: stickyBackButton.bottomAnchor, constant: 8),
             stickyFilterChipsView.leadingAnchor.constraint(equalTo: stickyHeaderView.leadingAnchor),
-            stickyFilterChipsView.trailingAnchor.constraint(equalTo: stickyHeaderView.trailingAnchor),
-            
-            // Segmented control - positioned at bottom right of sticky header
-            stickySegmentedControlView.bottomAnchor.constraint(equalTo: stickyHeaderView.bottomAnchor, constant: -8),
-            stickySegmentedControlView.trailingAnchor.constraint(equalTo: stickyHeaderView.trailingAnchor, constant: -12)
+            stickyFilterChipsView.trailingAnchor.constraint(equalTo: stickyHeaderView.trailingAnchor)
         ])
     }
     
@@ -855,12 +875,14 @@ final class CuentaViewController: UIViewController {
             if shouldShowFilters {
                 self.stickyFilterChipsView.isHidden = false
                 self.stickyFilterChipsView.alpha = 1
-                self.stickyHeightConstraint?.constant = 170
+                let height = 170 + self.view.safeAreaInsets.top
+                self.stickyHeightConstraint?.constant = height
                 self.scrollView.contentInset.top = 170
             } else {
                 self.stickyFilterChipsView.isHidden = true
                 self.stickyFilterChipsView.alpha = 0
-                self.stickyHeightConstraint?.constant = 100
+                let height = 100 + self.view.safeAreaInsets.top
+                self.stickyHeightConstraint?.constant = height
                 self.scrollView.contentInset.top = 100
             }
             self.view.layoutIfNeeded()
@@ -877,18 +899,19 @@ final class CuentaViewController: UIViewController {
             
             // Hide/show segmented controls to avoid both being visible
             self.segmentedControlView.alpha = show ? 0 : 1
-            self.stickySegmentedControlView.alpha = show ? 1 : 0
             
             // Show filter chips in sticky header if filters are active and sticky header is visible
             if show && self.isFilterVisible {
                 self.stickyFilterChipsView.isHidden = false
                 self.stickyFilterChipsView.alpha = 1
-                self.stickyHeightConstraint?.constant = 170
+                let height = 170 + self.view.safeAreaInsets.top
+                self.stickyHeightConstraint?.constant = height
                 self.scrollView.contentInset.top = 170
             } else if show {
                 self.stickyFilterChipsView.isHidden = true
                 self.stickyFilterChipsView.alpha = 0
-                self.stickyHeightConstraint?.constant = 100
+                let height = 100 + self.view.safeAreaInsets.top
+                self.stickyHeightConstraint?.constant = height
                 self.scrollView.contentInset.top = 100
             } else {
                 self.scrollView.contentInset.top = 0
