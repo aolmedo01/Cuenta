@@ -126,6 +126,9 @@ final class SearchBarView: UIView {
     private var searchHighlightLayer: CAShapeLayer?
     private var filterHighlightLayer: CAShapeLayer?
     
+    // MARK: - Callback
+    var onSearchBarTapped: (() -> Void)?
+    
     // MARK: - Initialization
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -153,6 +156,14 @@ final class SearchBarView: UIView {
         // Hide filter button elements
         filterOuterRing.isHidden = true
         filterContainerView.isHidden = true
+        
+        // Disable text field editing - we'll navigate to search screen instead
+        textField.isEnabled = false
+        
+        // Add tap gesture to open search screen
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(searchBarTapped))
+        containerView.addGestureRecognizer(tapGesture)
+        containerView.isUserInteractionEnabled = true
         
         // Add shadow to outer ring for depth
         searchOuterRing.layer.shadowColor = UIColor.black.cgColor
@@ -197,6 +208,11 @@ final class SearchBarView: UIView {
             textField.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -10),
             textField.centerYAnchor.constraint(equalTo: containerView.centerYAnchor)
         ])
+    }
+    
+    // MARK: - Actions
+    @objc private func searchBarTapped() {
+        onSearchBarTapped?()
     }
     
     // MARK: - Filter Active State

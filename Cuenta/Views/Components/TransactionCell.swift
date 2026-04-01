@@ -10,7 +10,7 @@ final class TransactionCell: UIView {
     var onExpansionChanged: ((Bool) -> Void)?
     var onShareTapped: ((Transaction) -> Void)?
     
-    private var collapsedHeight: CGFloat = 72
+    private var collapsedHeight: CGFloat = 64
     private var expandedHeight: CGFloat = 280
     
     private var heightConstraint: NSLayoutConstraint?
@@ -76,16 +76,35 @@ final class TransactionCell: UIView {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
         view.backgroundColor = UIColor(red: 0.906, green: 0.937, blue: 1.0, alpha: 1) // #E7EFFF
-        view.layer.cornerRadius = 10
+        view.layer.cornerRadius = 14
         view.isHidden = true
         return view
+    }()
+    
+    private let statusClockIcon: UIImageView = {
+        let imageView = UIImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.image = UIImage(systemName: "clock")?
+            .withConfiguration(UIImage.SymbolConfiguration(pointSize: 14, weight: .medium))
+        imageView.tintColor = UIColor(red: 0.035, green: 0.231, blue: 0.596, alpha: 1) // #093B98
+        imageView.contentMode = .scaleAspectFit
+        return imageView
     }()
     
     private let statusLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = .manrope(size: 10, weight: .bold)
-        label.textColor = UIColor(red: 0.047, green: 0.306, blue: 0.796, alpha: 1) // #0C4ECB
+        label.font = .manrope(size: 15, weight: .regular)
+        label.textColor = UIColor(red: 0.035, green: 0.231, blue: 0.596, alpha: 1) // #093B98
+        label.textAlignment = .center
+        return label
+    }()
+    
+    private let statusTimeLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .manrope(size: 15, weight: .bold)
+        label.textColor = UIColor(red: 0.035, green: 0.231, blue: 0.596, alpha: 1) // #093B98
         label.textAlignment = .center
         return label
     }()
@@ -222,6 +241,17 @@ final class TransactionCell: UIView {
     
     private var progressWidthConstraint: NSLayoutConstraint?
     
+    // Warning text shown in collapsed state for cardless withdrawals
+    private let collapsedWarningLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.text = "Si el tiempo expira, el dinero regresará a tu cuenta."
+        label.font = .manrope(size: 11, weight: .regular)
+        label.textColor = UIColor(red: 0.541, green: 0.576, blue: 0.659, alpha: 1) // #8A93A8
+        label.isHidden = true
+        return label
+    }()
+    
     private let footerMessageLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -280,9 +310,12 @@ final class TransactionCell: UIView {
         labelsStack.addArrangedSubview(titleLabel)
         labelsStack.addArrangedSubview(subtitleLabel)
         labelsStack.addArrangedSubview(statusBadge)
+        labelsStack.addArrangedSubview(collapsedWarningLabel)
         labelsStack.addArrangedSubview(subtitle2Label)
         labelsStack.addArrangedSubview(subtitle3Label)
+        statusBadge.addSubview(statusClockIcon)
         statusBadge.addSubview(statusLabel)
+        statusBadge.addSubview(statusTimeLabel)
         
         amountStack.addArrangedSubview(amountLabel)
         amountStack.addArrangedSubview(balanceLabel)
@@ -331,11 +364,17 @@ final class TransactionCell: UIView {
             containerView.trailingAnchor.constraint(equalTo: trailingAnchor),
             containerView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8),
             
-            // Status Badge
-            statusBadge.heightAnchor.constraint(equalToConstant: 20),
-            statusLabel.leadingAnchor.constraint(equalTo: statusBadge.leadingAnchor, constant: 8),
-            statusLabel.trailingAnchor.constraint(equalTo: statusBadge.trailingAnchor, constant: -8),
+            // Status Badge - "Por retirar 23 h" style
+            statusBadge.heightAnchor.constraint(equalToConstant: 28),
+            statusClockIcon.leadingAnchor.constraint(equalTo: statusBadge.leadingAnchor, constant: 10),
+            statusClockIcon.centerYAnchor.constraint(equalTo: statusBadge.centerYAnchor),
+            statusClockIcon.widthAnchor.constraint(equalToConstant: 16),
+            statusClockIcon.heightAnchor.constraint(equalToConstant: 16),
+            statusLabel.leadingAnchor.constraint(equalTo: statusClockIcon.trailingAnchor, constant: 4),
             statusLabel.centerYAnchor.constraint(equalTo: statusBadge.centerYAnchor),
+            statusTimeLabel.leadingAnchor.constraint(equalTo: statusLabel.trailingAnchor, constant: 2),
+            statusTimeLabel.trailingAnchor.constraint(equalTo: statusBadge.trailingAnchor, constant: -10),
+            statusTimeLabel.centerYAnchor.constraint(equalTo: statusBadge.centerYAnchor),
             
             // Icon Container
             iconContainer.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
@@ -578,8 +617,8 @@ final class TransactionCell: UIView {
         amountLabel.text = transaction.formattedAmount
         balanceLabel.text = transaction.formattedBalance
         
-        // Amount color - electricity type uses dark color, others use positive/negative
-        if transaction.type == .electricity {
+        // Amount color - electricity and withdrawal types use dark color, others use positive/negative
+        if transaction.type == .electricity || (transaction.type == .withdrawal && transaction.status == .toWithdraw) {
             amountLabel.textColor = UIColor(red: 0.129, green: 0.157, blue: 0.227, alpha: 1) // #21283A
         } else {
             amountLabel.textColor = transaction.isPositive ? .amountPositive : .amountNegative
@@ -589,14 +628,33 @@ final class TransactionCell: UIView {
         switch transaction.status {
         case .toWithdraw:
             statusBadge.isHidden = false
+            collapsedWarningLabel.isHidden = false
+            balanceLabel.isHidden = true // No balance shown for pending withdrawals
             statusLabel.text = "Por retirar"
+            // Extract hours from timeRemaining (e.g., "23h 15m" -> "23 h")
+            if let timeRemaining = transaction.timeRemaining {
+                let hours = timeRemaining.components(separatedBy: "h").first ?? "23"
+                statusTimeLabel.text = "\(hours.trimmingCharacters(in: .whitespaces)) h"
+            } else {
+                statusTimeLabel.text = "23 h"
+            }
             subtitleLabel.isHidden = true
+            // Adjust height for withdrawal with warning (104px per CSS)
+            collapsedHeight = 104
+            if !isExpanded {
+                heightConstraint?.constant = collapsedHeight
+            }
         case .pending:
             statusBadge.isHidden = false
+            collapsedWarningLabel.isHidden = true
+            balanceLabel.isHidden = false
             statusLabel.text = "Pendiente"
+            statusTimeLabel.text = ""
             subtitleLabel.isHidden = true
         case .completed:
             statusBadge.isHidden = true
+            collapsedWarningLabel.isHidden = true
+            balanceLabel.isHidden = false
             subtitleLabel.isHidden = false
         }
         
@@ -606,7 +664,7 @@ final class TransactionCell: UIView {
         case .transfer:
             iconName = "arrow.left.arrow.right"
         case .withdrawal:
-            iconName = "banknote"
+            iconName = "dollarsign.square" // banking-online icon
         case .deposit:
             iconName = "arrow.down"
         case .payment:
@@ -691,8 +749,8 @@ final class TransactionCell: UIView {
             extraBalance1Label.isHidden = true
             extraBalance2Label.isHidden = true
             
-            // Reset to normal height
-            collapsedHeight = 72
+            // Reset to normal height (64px per CSS specs)
+            collapsedHeight = 64
             if !isExpanded {
                 heightConstraint?.constant = collapsedHeight
             }

@@ -6,8 +6,8 @@ final class HistorySectionView: UIView {
     private let headerLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = .sectionHeader
-        label.textColor = .textSecondary
+        label.font = .manrope(size: 15, weight: .bold)
+        label.textColor = UIColor(red: 0.235, green: 0.235, blue: 0.263, alpha: 0.6) // rgba(60, 60, 67, 0.6)
         return label
     }()
     
@@ -39,13 +39,14 @@ final class HistorySectionView: UIView {
         addSubview(stackView)
         
         NSLayoutConstraint.activate([
-            // Header
-            headerLabel.topAnchor.constraint(equalTo: topAnchor),
-            headerLabel.leadingAnchor.constraint(equalTo: leadingAnchor),
+            // Header with 16px left padding
+            headerLabel.topAnchor.constraint(equalTo: topAnchor, constant: 16),
+            headerLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
             headerLabel.trailingAnchor.constraint(equalTo: trailingAnchor),
+            headerLabel.heightAnchor.constraint(equalToConstant: 20),
             
             // Stack
-            stackView.topAnchor.constraint(equalTo: headerLabel.bottomAnchor, constant: 12),
+            stackView.topAnchor.constraint(equalTo: headerLabel.bottomAnchor, constant: 8),
             stackView.leadingAnchor.constraint(equalTo: leadingAnchor),
             stackView.trailingAnchor.constraint(equalTo: trailingAnchor),
             stackView.bottomAnchor.constraint(equalTo: bottomAnchor)

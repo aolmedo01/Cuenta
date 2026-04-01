@@ -3,8 +3,8 @@ import UIKit
 extension UIColor {
     
     // MARK: - Background Colors
-    static let appBackground = UIColor(red: 0.965, green: 0.969, blue: 0.976, alpha: 1) // #f6f7f9
-    static let cardBackground = UIColor.white
+    static let appBackground = UIColor(red: 0.988, green: 0.988, blue: 0.992, alpha: 1) // #FCFCFD
+    static let cardBackground = UIColor(red: 0.988, green: 0.988, blue: 0.992, alpha: 1) // #FCFCFD
     static let searchBackground = UIColor(red: 0.949, green: 0.957, blue: 0.969, alpha: 1) // #F2F4F7
     
     // MARK: - Text Colors

@@ -288,6 +288,15 @@ final class CuentaViewController: UIViewController {
         return view
     }()
     
+    private let todayHeaderLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.text = "Hoy"
+        label.font = .manrope(size: 15, weight: .bold)
+        label.textColor = UIColor(red: 0.235, green: 0.235, blue: 0.263, alpha: 0.6) // rgba(60, 60, 67, 0.6)
+        return label
+    }()
+    
     private let stickySegmentedControlView: SegmentedControlView = {
         let view = SegmentedControlView()
         return view
@@ -318,7 +327,7 @@ final class CuentaViewController: UIViewController {
     private let movementsContentBackgroundView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = .white
+        view.backgroundColor = UIColor(red: 0.961, green: 0.965, blue: 0.973, alpha: 1) // #F5F6F8
         view.layer.cornerRadius = 28
         view.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         return view
@@ -617,6 +626,9 @@ final class CuentaViewController: UIViewController {
         // Configure search bar
         searchBarView.textField.placeholder = "Buscar movimiento"
         searchBarView.filterButton.addTarget(self, action: #selector(filterButtonTapped), for: .touchUpInside)
+        searchBarView.onSearchBarTapped = { [weak self] in
+            self?.openSearchScreen()
+        }
         
         // Add search bar container at the top of movements stack
         let searchBarContainer = UIView()
@@ -650,13 +662,20 @@ final class CuentaViewController: UIViewController {
         // Add filter chips
         movementsStackView.addArrangedSubview(filterChipsView)
         
-        // Add segmented control (Manual/Automático) in the same row as "Hoy" header
+        // Add "Hoy" header with segmented control (Manual/Automático) in the same row
         movementsStackView.addArrangedSubview(segmentedControlContainer)
+        segmentedControlContainer.addSubview(todayHeaderLabel)
         segmentedControlContainer.addSubview(segmentedControlView)
         
         NSLayoutConstraint.activate([
-            segmentedControlContainer.heightAnchor.constraint(equalToConstant: 40),
-            segmentedControlView.trailingAnchor.constraint(equalTo: segmentedControlContainer.trailingAnchor, constant: -16),
+            segmentedControlContainer.heightAnchor.constraint(equalToConstant: 50),
+            
+            // "Hoy" label on the left
+            todayHeaderLabel.leadingAnchor.constraint(equalTo: segmentedControlContainer.leadingAnchor, constant: 16),
+            todayHeaderLabel.centerYAnchor.constraint(equalTo: segmentedControlContainer.centerYAnchor),
+            
+            // Segmented control on the right
+            segmentedControlView.trailingAnchor.constraint(equalTo: segmentedControlContainer.trailingAnchor),
             segmentedControlView.centerYAnchor.constraint(equalTo: segmentedControlContainer.centerYAnchor)
         ])
         
@@ -925,18 +944,20 @@ final class CuentaViewController: UIViewController {
         allTransactionCells.removeAll()
         
         // Add transaction sections
-        for section in transactionSections {
+        for (index, section) in transactionSections.enumerated() {
             let sectionContainer = UIView()
             sectionContainer.translatesAutoresizingMaskIntoConstraints = false
             
             let sectionStack = UIStackView()
             sectionStack.translatesAutoresizingMaskIntoConstraints = false
             sectionStack.axis = .vertical
-            sectionStack.spacing = 0
+            sectionStack.spacing = 8
             
-            // Section header
-            let header = SectionHeaderView(title: section.title)
-            sectionStack.addArrangedSubview(header)
+            // Section header (skip for first section "Hoy" as it's in the segmented control row)
+            if index > 0 {
+                let header = SectionHeaderView(title: section.title)
+                sectionStack.addArrangedSubview(header)
+            }
             
             // Transaction cells
             for transaction in section.transactions {
@@ -973,8 +994,8 @@ final class CuentaViewController: UIViewController {
             
             NSLayoutConstraint.activate([
                 sectionStack.topAnchor.constraint(equalTo: sectionContainer.topAnchor),
-                sectionStack.leadingAnchor.constraint(equalTo: sectionContainer.leadingAnchor, constant: 16),
-                sectionStack.trailingAnchor.constraint(equalTo: sectionContainer.trailingAnchor, constant: -16),
+                sectionStack.leadingAnchor.constraint(equalTo: sectionContainer.leadingAnchor),
+                sectionStack.trailingAnchor.constraint(equalTo: sectionContainer.trailingAnchor),
                 sectionStack.bottomAnchor.constraint(equalTo: sectionContainer.bottomAnchor)
             ])
             
@@ -1330,6 +1351,12 @@ final class CuentaViewController: UIViewController {
         
         // Update sticky header filters visibility
         updateStickyHeaderFilters()
+    }
+    
+    private func openSearchScreen() {
+        let searchVC = SearchViewController()
+        searchVC.modalPresentationStyle = .fullScreen
+        present(searchVC, animated: true)
     }
     
     private func handleFilterSelection(_ filterType: String, anchorView: UIView) {
