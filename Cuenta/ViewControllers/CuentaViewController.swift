@@ -28,6 +28,8 @@ final class CuentaViewController: UIViewController {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
         view.clipsToBounds = false
+        // Match header gradient bottom color to hide any gap
+        view.backgroundColor = UIColor(red: 0.74, green: 0.0, blue: 0.56, alpha: 1)
         return view
     }()
     
@@ -596,7 +598,7 @@ final class CuentaViewController: UIViewController {
             
             balanceLabel.leadingAnchor.constraint(equalTo: headerCardView.leadingAnchor, constant: 24),
             balanceLabel.trailingAnchor.constraint(equalTo: headerCardView.trailingAnchor, constant: -24),
-            balanceLabel.bottomAnchor.constraint(equalTo: headerCardView.bottomAnchor, constant: -24)
+            balanceLabel.bottomAnchor.constraint(equalTo: headerCardView.bottomAnchor, constant: -40)
         ])
     }
     
@@ -604,7 +606,7 @@ final class CuentaViewController: UIViewController {
         // Add movements container to main stack
         mainStackView.addArrangedSubview(movementsContainerView)
         // Slight overlap so the white content sheet sits attached to the magenta header
-        mainStackView.setCustomSpacing(-52, after: headerView)
+        mainStackView.setCustomSpacing(-44, after: headerView)
         movementsContainerView.addSubview(movementsContentBackgroundView)
         movementsContainerView.addSubview(movementsTopShadowView)
         movementsContainerView.addSubview(movementsTopDividerView)
