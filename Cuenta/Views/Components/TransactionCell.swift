@@ -10,7 +10,7 @@ final class TransactionCell: UIView {
     var onExpansionChanged: ((Bool) -> Void)?
     var onShareTapped: ((Transaction) -> Void)?
     
-    private var collapsedHeight: CGFloat = 64
+    private var collapsedHeight: CGFloat = 100
     private var expandedHeight: CGFloat = 280
     
     private var heightConstraint: NSLayoutConstraint?
@@ -385,7 +385,7 @@ final class TransactionCell: UIView {
             
             // Icon Container - centered vertically with 16px padding (padding: 16px 0px)
             iconContainer.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-            iconContainer.centerYAnchor.constraint(equalTo: containerView.topAnchor, constant: 32), // 64/2 = 32 (center of collapsed height)
+            iconContainer.centerYAnchor.constraint(equalTo: containerView.topAnchor, constant: 50), // 100/2 = 50 (center of collapsed height)
             iconContainer.widthAnchor.constraint(equalToConstant: 36),
             iconContainer.heightAnchor.constraint(equalToConstant: 36),
             
@@ -452,13 +452,13 @@ final class TransactionCell: UIView {
             heightConstraint!
         ])
         
-        // Setup dynamic vertical constraints (start with centerY for 64px rows)
-        labelsStackCenterYConstraint = labelsStack.centerYAnchor.constraint(equalTo: containerView.topAnchor, constant: 32)
-        labelsStackTopConstraint = labelsStack.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 11)
-        amountStackCenterYConstraint = amountStack.centerYAnchor.constraint(equalTo: containerView.topAnchor, constant: 32)
-        amountStackTopConstraint = amountStack.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 11)
+        // Setup dynamic vertical constraints (start with centerY for 100px rows)
+        labelsStackCenterYConstraint = labelsStack.centerYAnchor.constraint(equalTo: containerView.topAnchor, constant: 50)
+        labelsStackTopConstraint = labelsStack.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 16)
+        amountStackCenterYConstraint = amountStack.centerYAnchor.constraint(equalTo: containerView.topAnchor, constant: 50)
+        amountStackTopConstraint = amountStack.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 16)
         
-        // Default: centerY active for 64px rows
+        // Default: centerY active for 100px rows
         labelsStackCenterYConstraint?.isActive = true
         amountStackCenterYConstraint?.isActive = true
         
@@ -632,12 +632,12 @@ final class TransactionCell: UIView {
     // MARK: - Reset State
     private func resetCellState() {
         // Reset heights
-        collapsedHeight = 64
+        collapsedHeight = 100
         if !isExpanded {
             heightConstraint?.constant = collapsedHeight
         }
         
-        // Reset constraint modes (default: centerY for 64px)
+        // Reset constraint modes (default: centerY for 100px)
         labelsStackTopConstraint?.isActive = false
         amountStackTopConstraint?.isActive = false
         labelsStackCenterYConstraint?.isActive = true
@@ -810,13 +810,13 @@ final class TransactionCell: UIView {
             extraBalance1Label.isHidden = true
             extraBalance2Label.isHidden = true
             
-            // Reset to normal height (64px per CSS specs)
-            collapsedHeight = 64
+            // Reset to normal height (100px with padding)
+            collapsedHeight = 100
             if !isExpanded {
                 heightConstraint?.constant = collapsedHeight
             }
             
-            // Reset to centerY alignment for 64px rows
+            // Reset to centerY alignment for 100px rows
             labelsStackTopConstraint?.isActive = false
             amountStackTopConstraint?.isActive = false
             labelsStackCenterYConstraint?.isActive = true
