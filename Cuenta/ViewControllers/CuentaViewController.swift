@@ -321,7 +321,6 @@ final class CuentaViewController: UIViewController {
         view.backgroundColor = .white
         view.layer.cornerRadius = 28
         view.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
-        view.clipsToBounds = true
         return view
     }()
     
@@ -638,9 +637,9 @@ final class CuentaViewController: UIViewController {
             
             searchBarContainer.heightAnchor.constraint(equalToConstant: 64),
             searchBarView.leadingAnchor.constraint(equalTo: searchBarContainer.leadingAnchor),
-            searchBarView.trailingAnchor.constraint(equalTo: searchBarContainer.trailingAnchor),
+            searchBarView.trailingAnchor.constraint(equalTo: searchBarContainer.trailingAnchor, constant: -4),
             searchBarView.centerYAnchor.constraint(equalTo: searchBarContainer.centerYAnchor),
-            searchBarView.heightAnchor.constraint(equalToConstant: 48)
+            searchBarView.heightAnchor.constraint(equalToConstant: 56)
         ])
         
         // Add filter chips
@@ -733,7 +732,7 @@ final class CuentaViewController: UIViewController {
         NSLayoutConstraint.activate([
             movementsStackView.topAnchor.constraint(equalTo: movementsContentBackgroundView.topAnchor, constant: 16),
             movementsStackView.leadingAnchor.constraint(equalTo: movementsContentBackgroundView.leadingAnchor, constant: 16),
-            movementsStackView.trailingAnchor.constraint(equalTo: movementsContentBackgroundView.trailingAnchor, constant: -16),
+            movementsStackView.trailingAnchor.constraint(equalTo: movementsContentBackgroundView.trailingAnchor, constant: -8),
             movementsStackView.bottomAnchor.constraint(equalTo: movementsContentBackgroundView.bottomAnchor, constant: -32)
         ])
     }

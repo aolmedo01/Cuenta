@@ -17,19 +17,20 @@ final class TransferButton: UIButton {
     private func setupView() {
         translatesAutoresizingMaskIntoConstraints = false
         
-        backgroundColor = .buttonBackground
+        // Dark navy background
+        backgroundColor = UIColor(red: 0.106, green: 0.106, blue: 0.227, alpha: 1.0) // #1B1B3A
         layer.cornerRadius = 25
         
-        // Icon
-        let iconImage = UIImage(systemName: "arrow.left.arrow.right")?
+        // Icon - up/down arrows
+        let iconImage = UIImage(systemName: "arrow.up.arrow.down")?
             .withConfiguration(UIImage.SymbolConfiguration(pointSize: 15, weight: .semibold))
             .withRenderingMode(.alwaysTemplate)
         setImage(iconImage, for: .normal)
-        tintColor = .textNavy
+        tintColor = .white
         
         // Title
         setTitle("Transferir", for: .normal)
-        setTitleColor(.textDark, for: .normal)
+        setTitleColor(.white, for: .normal)
         titleLabel?.font = .buttonLabel
         
         // Layout

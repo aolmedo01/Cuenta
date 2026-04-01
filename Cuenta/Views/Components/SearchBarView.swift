@@ -34,7 +34,7 @@ final class SearchBarView: UIView {
     private let glassOverlay: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = UIColor(red: 0.973, green: 0.973, blue: 0.973, alpha: 0.95) // #f8f8f8
+        view.backgroundColor = UIColor(red: 0.969, green: 0.969, blue: 0.969, alpha: 1.0) // #F7F7F7
         view.layer.cornerRadius = 24
         return view
     }()
@@ -43,8 +43,8 @@ final class SearchBarView: UIView {
         let imageView = UIImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.image = UIImage(systemName: "magnifyingglass")?
-            .withConfiguration(UIImage.SymbolConfiguration(pointSize: 20, weight: .regular))
-        imageView.tintColor = .textSecondary
+            .withConfiguration(UIImage.SymbolConfiguration(pointSize: 17, weight: .medium))
+        imageView.tintColor = UIColor(red: 0.251, green: 0.251, blue: 0.251, alpha: 1.0) // #404040
         imageView.contentMode = .scaleAspectFit
         return imageView
     }()
@@ -52,8 +52,11 @@ final class SearchBarView: UIView {
     let textField: UITextField = {
         let textField = UITextField()
         textField.translatesAutoresizingMaskIntoConstraints = false
-        textField.placeholder = "Buscar nombre o comercio"
-        textField.font = .searchPlaceholder
+        textField.attributedPlaceholder = NSAttributedString(
+            string: "Buscar movimiento",
+            attributes: [.foregroundColor: UIColor(red: 0.851, green: 0.851, blue: 0.851, alpha: 1.0)] // #D9D9D9
+        )
+        textField.font = UIFont.systemFont(ofSize: 17, weight: .medium)
         textField.textColor = .textPrimary
         textField.borderStyle = .none
         textField.backgroundColor = .clear
@@ -147,37 +150,28 @@ final class SearchBarView: UIView {
         containerView.addSubview(searchIcon)
         containerView.addSubview(textField)
         
-        // Filter button with liquid glass effect
-        addSubview(filterOuterRing)
-        addSubview(filterContainerView)
-        filterContainerView.addSubview(filterBlurView)
-        filterContainerView.addSubview(filterOverlay)
-        filterContainerView.addSubview(activeBlueCircle)
-        filterContainerView.addSubview(filterButton)
+        // Hide filter button elements
+        filterOuterRing.isHidden = true
+        filterContainerView.isHidden = true
         
-        // Add shadow to outer rings for depth
+        // Add shadow to outer ring for depth
         searchOuterRing.layer.shadowColor = UIColor.black.cgColor
         searchOuterRing.layer.shadowOpacity = 0.02
         searchOuterRing.layer.shadowOffset = CGSize(width: 0, height: 2)
         searchOuterRing.layer.shadowRadius = 6
         
-        filterOuterRing.layer.shadowColor = UIColor.black.cgColor
-        filterOuterRing.layer.shadowOpacity = 0.02
-        filterOuterRing.layer.shadowOffset = CGSize(width: 0, height: 2)
-        filterOuterRing.layer.shadowRadius = 6
-        
         NSLayoutConstraint.activate([
-            // Search Outer Ring (liquid glass effect)
+            // Search Outer Ring (liquid glass effect) - full width
             searchOuterRing.leadingAnchor.constraint(equalTo: leadingAnchor, constant: -4),
             searchOuterRing.topAnchor.constraint(equalTo: topAnchor, constant: -4),
             searchOuterRing.bottomAnchor.constraint(equalTo: bottomAnchor, constant: 4),
-            searchOuterRing.trailingAnchor.constraint(equalTo: filterOuterRing.leadingAnchor, constant: -8),
+            searchOuterRing.trailingAnchor.constraint(equalTo: trailingAnchor, constant: 4),
             
-            // Container
+            // Container - full width
             containerView.leadingAnchor.constraint(equalTo: leadingAnchor),
             containerView.topAnchor.constraint(equalTo: topAnchor),
             containerView.bottomAnchor.constraint(equalTo: bottomAnchor),
-            containerView.trailingAnchor.constraint(equalTo: filterContainerView.leadingAnchor, constant: -16),
+            containerView.trailingAnchor.constraint(equalTo: trailingAnchor),
             containerView.heightAnchor.constraint(equalToConstant: 48),
             
             // Blur View
@@ -193,51 +187,15 @@ final class SearchBarView: UIView {
             glassOverlay.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
             
             // Search Icon
-            searchIcon.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
+            searchIcon.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 11),
             searchIcon.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
-            searchIcon.widthAnchor.constraint(equalToConstant: 24),
-            searchIcon.heightAnchor.constraint(equalToConstant: 24),
+            searchIcon.widthAnchor.constraint(equalToConstant: 26),
+            searchIcon.heightAnchor.constraint(equalToConstant: 20),
             
             // Text Field
-            textField.leadingAnchor.constraint(equalTo: searchIcon.trailingAnchor, constant: 12),
-            textField.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
-            textField.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
-            
-            // Filter Outer Ring (liquid glass effect)
-            filterOuterRing.trailingAnchor.constraint(equalTo: trailingAnchor, constant: 4),
-            filterOuterRing.centerYAnchor.constraint(equalTo: centerYAnchor),
-            filterOuterRing.widthAnchor.constraint(equalToConstant: 56),
-            filterOuterRing.heightAnchor.constraint(equalToConstant: 56),
-            
-            // Filter Container
-            filterContainerView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            filterContainerView.centerYAnchor.constraint(equalTo: centerYAnchor),
-            filterContainerView.widthAnchor.constraint(equalToConstant: 48),
-            filterContainerView.heightAnchor.constraint(equalToConstant: 48),
-            
-            // Filter Blur
-            filterBlurView.topAnchor.constraint(equalTo: filterContainerView.topAnchor),
-            filterBlurView.leadingAnchor.constraint(equalTo: filterContainerView.leadingAnchor),
-            filterBlurView.trailingAnchor.constraint(equalTo: filterContainerView.trailingAnchor),
-            filterBlurView.bottomAnchor.constraint(equalTo: filterContainerView.bottomAnchor),
-            
-            // Filter Overlay
-            filterOverlay.topAnchor.constraint(equalTo: filterContainerView.topAnchor),
-            filterOverlay.leadingAnchor.constraint(equalTo: filterContainerView.leadingAnchor),
-            filterOverlay.trailingAnchor.constraint(equalTo: filterContainerView.trailingAnchor),
-            filterOverlay.bottomAnchor.constraint(equalTo: filterContainerView.bottomAnchor),
-            
-            // Active Blue Circle (same size as container)
-            activeBlueCircle.topAnchor.constraint(equalTo: filterContainerView.topAnchor),
-            activeBlueCircle.leadingAnchor.constraint(equalTo: filterContainerView.leadingAnchor),
-            activeBlueCircle.trailingAnchor.constraint(equalTo: filterContainerView.trailingAnchor),
-            activeBlueCircle.bottomAnchor.constraint(equalTo: filterContainerView.bottomAnchor),
-            
-            // Filter Button
-            filterButton.topAnchor.constraint(equalTo: filterContainerView.topAnchor),
-            filterButton.leadingAnchor.constraint(equalTo: filterContainerView.leadingAnchor),
-            filterButton.trailingAnchor.constraint(equalTo: filterContainerView.trailingAnchor),
-            filterButton.bottomAnchor.constraint(equalTo: filterContainerView.bottomAnchor)
+            textField.leadingAnchor.constraint(equalTo: searchIcon.trailingAnchor, constant: 4),
+            textField.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -10),
+            textField.centerYAnchor.constraint(equalTo: containerView.centerYAnchor)
         ])
     }
     
