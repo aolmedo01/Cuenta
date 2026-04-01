@@ -8,7 +8,7 @@ final class SearchBarView: UIView {
     private let searchOuterRing: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = UIColor.white.withAlphaComponent(0.6)
+        view.backgroundColor = UIColor.white.withAlphaComponent(0.35)
         view.layer.cornerRadius = 28
         return view
     }()
@@ -64,7 +64,7 @@ final class SearchBarView: UIView {
     private let filterOuterRing: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = UIColor.white.withAlphaComponent(0.6)
+        view.backgroundColor = UIColor.white.withAlphaComponent(0.35)
         view.layer.cornerRadius = 28
         return view
     }()
@@ -157,14 +157,14 @@ final class SearchBarView: UIView {
         
         // Add shadow to outer rings for depth
         searchOuterRing.layer.shadowColor = UIColor.black.cgColor
-        searchOuterRing.layer.shadowOpacity = 0.06
-        searchOuterRing.layer.shadowOffset = CGSize(width: 0, height: 4)
-        searchOuterRing.layer.shadowRadius = 12
+        searchOuterRing.layer.shadowOpacity = 0.02
+        searchOuterRing.layer.shadowOffset = CGSize(width: 0, height: 2)
+        searchOuterRing.layer.shadowRadius = 6
         
         filterOuterRing.layer.shadowColor = UIColor.black.cgColor
-        filterOuterRing.layer.shadowOpacity = 0.06
-        filterOuterRing.layer.shadowOffset = CGSize(width: 0, height: 4)
-        filterOuterRing.layer.shadowRadius = 12
+        filterOuterRing.layer.shadowOpacity = 0.02
+        filterOuterRing.layer.shadowOffset = CGSize(width: 0, height: 2)
+        filterOuterRing.layer.shadowRadius = 6
         
         NSLayoutConstraint.activate([
             // Search Outer Ring (liquid glass effect)

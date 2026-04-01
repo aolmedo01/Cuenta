@@ -2,6 +2,11 @@ import UIKit
 
 final class CircleIconButton: UIButton {
     
+    enum GlassStyle {
+        case defaultLight
+        case lightOnDark
+    }
+    
     // MARK: - Properties
     private let blurView: UIVisualEffectView = {
         let blur = UIBlurEffect(style: .systemUltraThinMaterial)
@@ -91,6 +96,23 @@ final class CircleIconButton: UIButton {
         layer.cornerRadius = bounds.height / 2
         blurView.layer.cornerRadius = bounds.height / 2
         overlayView.layer.cornerRadius = bounds.height / 2
+    }
+    
+    func applyStyle(_ style: GlassStyle) {
+        switch style {
+        case .defaultLight:
+            overlayView.backgroundColor = UIColor(red: 0.969, green: 0.969, blue: 0.969, alpha: 0.9)
+            iconImageView.tintColor = UIColor(red: 0.251, green: 0.251, blue: 0.251, alpha: 1)
+            layer.borderWidth = 0
+            layer.borderColor = nil
+            layer.shadowOpacity = 0.04
+        case .lightOnDark:
+            overlayView.backgroundColor = UIColor.white.withAlphaComponent(0.18)
+            iconImageView.tintColor = .white
+            layer.borderWidth = 1
+            layer.borderColor = UIColor.white.withAlphaComponent(0.28).cgColor
+            layer.shadowOpacity = 0.08
+        }
     }
     
     // MARK: - Touch Feedback

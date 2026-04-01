@@ -264,7 +264,7 @@ final class TransactionReceiptViewController: UIViewController {
         outerCircle.layer.cornerRadius = 100
         middleCircle.layer.cornerRadius = 70
         
-        NSLayoutConstraint.activate([
+        NSLayoutConstraint.activate([   
             // Header - centered
             headerLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 24),
             headerLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),

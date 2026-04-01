@@ -1,17 +1,18 @@
 import UIKit
 
 final class CuentaViewController: UIViewController {
+    private let headerBaseHeight: CGFloat = 232
     
     // MARK: - Properties
     private var account = Account(
-        accountNumber: "12788373662",
+        accountNumber: "6497640900",
         accountType: "AHO",
         balance: 1482000.00
     )
     
     private var transactionSections: [TransactionSection] = []
     private var isCompactHeaderVisible = false
-    private var scrollThreshold: CGFloat = 160 // Threshold when header + transfer button pass
+    private var scrollThreshold: CGFloat = 220 // Threshold when header content passes
     
     // MARK: - UI Components
     private let scrollView: UIScrollView = {
@@ -19,12 +20,14 @@ final class CuentaViewController: UIViewController {
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.showsVerticalScrollIndicator = false
         scrollView.alwaysBounceVertical = true
+        scrollView.clipsToBounds = false
         return scrollView
     }()
     
     private let contentView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
+        view.clipsToBounds = false
         return view
     }()
     
@@ -32,8 +35,9 @@ final class CuentaViewController: UIViewController {
         let stack = UIStackView()
         stack.translatesAutoresizingMaskIntoConstraints = false
         stack.axis = .vertical
-        stack.spacing = 8
+        stack.spacing = 0
         stack.alignment = .fill
+        stack.clipsToBounds = false
         return stack
     }()
     
@@ -42,8 +46,24 @@ final class CuentaViewController: UIViewController {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
         view.backgroundColor = .clear
+        view.clipsToBounds = false
         return view
     }()
+    
+    private let headerCardView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        // Sin bordes redondeados - borde recto
+        view.clipsToBounds = true
+        return view
+    }()
+    
+    private let headerGradientLayer = CAGradientLayer()
+    private let headerGlowLayer = CAGradientLayer()
+    private var headerViewHeightConstraint: NSLayoutConstraint?
+    private var headerCardHeightConstraint: NSLayoutConstraint?
+    private var headerCardTopConstraint: NSLayoutConstraint?
+    private var toolbarTopConstraint: NSLayoutConstraint?
     
     private let toolbarView: UIView = {
         let view = UIView()
@@ -73,7 +93,27 @@ final class CuentaViewController: UIViewController {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
         label.font = .balanceTitle
-        label.textColor = .textPrimary
+        label.textColor = .white
+        label.numberOfLines = 1
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = 0.8
+        return label
+    }()
+    
+    private let accountInfoStack: UIStackView = {
+        let stack = UIStackView()
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        stack.axis = .vertical
+        stack.spacing = 2
+        stack.alignment = .leading
+        return stack
+    }()
+    
+    private let accountTypeLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .manrope(size: 12, weight: .regular)
+        label.textColor = UIColor.white.withAlphaComponent(0.92)
         return label
     }()
     
@@ -86,19 +126,44 @@ final class CuentaViewController: UIViewController {
     private let accountNumberLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = .accountSubtitle
-        label.textColor = .textSecondary
+        label.font = .manrope(size: 12, weight: .regular)
+        label.textColor = UIColor.white.withAlphaComponent(0.92)
         return label
     }()
     
-    private lazy var copyButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.setImage(UIImage(systemName: "square.and.arrow.up")?
-            .withConfiguration(UIImage.SymbolConfiguration(pointSize: 12, weight: .medium)), for: .normal)
-        button.tintColor = .textNavy
-        button.addTarget(self, action: #selector(copyAccountNumber), for: .touchUpInside)
-        return button
+    private let accountIconContainer: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = UIColor.white.withAlphaComponent(0.12)
+        view.layer.cornerRadius = 24
+        return view
+    }()
+    
+    private let accountIconLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.text = "🐷"
+        label.font = .systemFont(ofSize: 30)
+        label.textAlignment = .center
+        return label
+    }()
+    
+    private let accountCoinView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = UIColor(red: 1.0, green: 0.863, blue: 0.0, alpha: 1)
+        view.layer.cornerRadius = 8
+        return view
+    }()
+    
+    private let accountCoinLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.text = "$"
+        label.font = .manrope(size: 10, weight: .bold)
+        label.textColor = UIColor(red: 0.537, green: 0.365, blue: 0.0, alpha: 1)
+        label.textAlignment = .center
+        return label
     }()
     
     // MARK: - Sticky Compact Header
@@ -200,20 +265,8 @@ final class CuentaViewController: UIViewController {
         return button
     }()
     
-    private let transferContainer: UIView = {
-        let view = UIView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        return view
-    }()
-    
     // MARK: - Search
     private let searchBarView = SearchBarView()
-    
-    private let searchContainer: UIView = {
-        let view = UIView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        return view
-    }()
     
     // MARK: - Filter Chips
     private let filterChipsView: FilterChipsView = {
@@ -254,6 +307,59 @@ final class CuentaViewController: UIViewController {
     private var activeDropdown: DropdownMenuView?
     private var activeFilterType: String?
     
+    // MARK: - Movements Container
+    private let movementsContainerView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = UIColor(red: 0.824, green: 0.0, blue: 0.431, alpha: 1)
+        return view
+    }()
+    
+    private let movementsContentBackgroundView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .white
+        view.layer.cornerRadius = 28
+        view.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        view.clipsToBounds = true
+        return view
+    }()
+    
+    private let movementsTopDividerView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .clear
+        return view
+    }()
+    
+    private let movementsTopShadowView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .clear
+        view.isUserInteractionEnabled = false
+        return view
+    }()
+    
+    private let movementsTopShadowLayer: CAGradientLayer = {
+        let layer = CAGradientLayer()
+        layer.colors = [
+            UIColor.clear.cgColor,
+            UIColor.clear.cgColor
+        ]
+        layer.startPoint = CGPoint(x: 0.5, y: 0.0)
+        layer.endPoint = CGPoint(x: 0.5, y: 1.0)
+        return layer
+    }()
+    
+    private let movementsStackView: UIStackView = {
+        let stack = UIStackView()
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        stack.axis = .vertical
+        stack.spacing = 0
+        stack.alignment = .fill
+        return stack
+    }()
+    
     // MARK: - Transactions Container
     private let transactionsStackView: UIStackView = {
         let stack = UIStackView()
@@ -280,6 +386,18 @@ final class CuentaViewController: UIViewController {
         updateUI()
     }
     
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        let topInset = view.safeAreaInsets.top
+        toolbarTopConstraint?.constant = topInset + 6
+        headerCardTopConstraint?.constant = -topInset
+        headerCardHeightConstraint?.constant = headerBaseHeight + topInset
+        headerViewHeightConstraint?.constant = headerBaseHeight + topInset
+        headerGradientLayer.frame = headerCardView.bounds
+        headerGlowLayer.frame = headerCardView.bounds
+        movementsTopShadowLayer.frame = movementsTopShadowView.bounds
+    }
+    
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)
@@ -296,15 +414,12 @@ final class CuentaViewController: UIViewController {
         contentView.addSubview(mainStackView)
         
         setupHeader()
-        setupTransferButton()
-        setupSearchBar()
-        setupTransactions()
-        setupHistory()
+        setupMovementsContainer()
         setupStickyHeader()
         setupFloatingButtons()
         
         NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
@@ -378,24 +493,67 @@ final class CuentaViewController: UIViewController {
     private func setupHeader() {
         mainStackView.addArrangedSubview(headerView)
         
-        headerView.addSubview(toolbarView)
+        headerView.addSubview(headerCardView)
+        headerCardView.addSubview(toolbarView)
         toolbarView.addSubview(backButton)
         toolbarView.addSubview(cardButton)
         toolbarView.addSubview(moreButton)
         
-        headerView.addSubview(balanceLabel)
-        headerView.addSubview(accountNumberContainer)
+        headerCardView.addSubview(accountInfoStack)
+        accountInfoStack.addArrangedSubview(accountTypeLabel)
+        accountInfoStack.addArrangedSubview(accountNumberContainer)
         accountNumberContainer.addSubview(accountNumberLabel)
-        accountNumberContainer.addSubview(copyButton)
+        
+        headerCardView.addSubview(accountIconContainer)
+        accountIconContainer.addSubview(accountIconLabel)
+        accountIconContainer.addSubview(accountCoinView)
+        accountCoinView.addSubview(accountCoinLabel)
+        
+        headerCardView.addSubview(balanceLabel)
+        
+        backButton.applyStyle(.lightOnDark)
+        cardButton.applyStyle(.lightOnDark)
+        moreButton.applyStyle(.lightOnDark)
+        
+        headerGradientLayer.colors = [
+            UIColor(red: 0.85, green: 0.0, blue: 0.45, alpha: 1).cgColor,
+            UIColor(red: 0.74, green: 0.0, blue: 0.56, alpha: 1).cgColor
+        ]
+        headerGradientLayer.startPoint = CGPoint(x: 0.15, y: 0.0)
+        headerGradientLayer.endPoint = CGPoint(x: 0.85, y: 1.0)
+        
+        headerGlowLayer.colors = [
+            UIColor.white.withAlphaComponent(0.22).cgColor,
+            UIColor.clear.cgColor
+        ]
+        headerGlowLayer.startPoint = CGPoint(x: 0.5, y: 0.0)
+        headerGlowLayer.endPoint = CGPoint(x: 0.5, y: 0.45)
+        
+        if headerGradientLayer.superlayer == nil {
+            headerCardView.layer.insertSublayer(headerGradientLayer, at: 0)
+        }
+        if headerGlowLayer.superlayer == nil {
+            headerCardView.layer.insertSublayer(headerGlowLayer, above: headerGradientLayer)
+        }
+        
+        headerViewHeightConstraint = headerView.heightAnchor.constraint(equalToConstant: headerBaseHeight)
+        headerCardHeightConstraint = headerCardView.heightAnchor.constraint(equalToConstant: headerBaseHeight)
+        headerCardTopConstraint = headerCardView.topAnchor.constraint(equalTo: headerView.topAnchor, constant: 0)
+        toolbarTopConstraint = toolbarView.topAnchor.constraint(equalTo: headerCardView.topAnchor, constant: 50)
         
         NSLayoutConstraint.activate([
-            headerView.heightAnchor.constraint(equalToConstant: 136),
+            headerViewHeightConstraint!,
+            
+            headerCardTopConstraint!,
+            headerCardView.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
+            headerCardView.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
+            headerCardHeightConstraint!,
             
             // Toolbar
-            toolbarView.topAnchor.constraint(equalTo: headerView.topAnchor, constant: 10),
-            toolbarView.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 16),
-            toolbarView.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -16),
-            toolbarView.heightAnchor.constraint(equalToConstant: 44),
+            toolbarTopConstraint!,
+            toolbarView.leadingAnchor.constraint(equalTo: headerCardView.leadingAnchor, constant: 24),
+            toolbarView.trailingAnchor.constraint(equalTo: headerCardView.trailingAnchor, constant: -24),
+            toolbarView.heightAnchor.constraint(equalToConstant: 48),
             
             // Back Button
             backButton.leadingAnchor.constraint(equalTo: toolbarView.leadingAnchor),
@@ -409,53 +567,99 @@ final class CuentaViewController: UIViewController {
             cardButton.trailingAnchor.constraint(equalTo: moreButton.leadingAnchor, constant: -10),
             cardButton.centerYAnchor.constraint(equalTo: toolbarView.centerYAnchor),
             
-            // Balance
-            balanceLabel.topAnchor.constraint(equalTo: toolbarView.bottomAnchor, constant: 16),
-            balanceLabel.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 16),
+            accountInfoStack.topAnchor.constraint(equalTo: toolbarView.bottomAnchor, constant: 34),
+            accountInfoStack.leadingAnchor.constraint(equalTo: headerCardView.leadingAnchor, constant: 24),
+            accountInfoStack.trailingAnchor.constraint(lessThanOrEqualTo: accountIconContainer.leadingAnchor, constant: -16),
             
-            // Account Number Container
-            accountNumberContainer.topAnchor.constraint(equalTo: balanceLabel.bottomAnchor, constant: 8),
-            accountNumberContainer.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 16),
+            accountNumberContainer.leadingAnchor.constraint(equalTo: accountInfoStack.leadingAnchor),
+            accountNumberContainer.heightAnchor.constraint(equalToConstant: 18),
             
             accountNumberLabel.leadingAnchor.constraint(equalTo: accountNumberContainer.leadingAnchor),
             accountNumberLabel.centerYAnchor.constraint(equalTo: accountNumberContainer.centerYAnchor),
+            accountNumberLabel.trailingAnchor.constraint(equalTo: accountNumberContainer.trailingAnchor),
             
-            copyButton.leadingAnchor.constraint(equalTo: accountNumberLabel.trailingAnchor, constant: 8),
-            copyButton.trailingAnchor.constraint(equalTo: accountNumberContainer.trailingAnchor),
-            copyButton.centerYAnchor.constraint(equalTo: accountNumberContainer.centerYAnchor),
-            copyButton.widthAnchor.constraint(equalToConstant: 20),
-            copyButton.heightAnchor.constraint(equalToConstant: 20),
+            accountIconContainer.trailingAnchor.constraint(equalTo: headerCardView.trailingAnchor, constant: -24),
+            accountIconContainer.topAnchor.constraint(equalTo: toolbarView.bottomAnchor, constant: 32),
+            accountIconContainer.widthAnchor.constraint(equalToConstant: 48),
+            accountIconContainer.heightAnchor.constraint(equalToConstant: 48),
             
-            accountNumberContainer.heightAnchor.constraint(equalToConstant: 17)
+            accountIconLabel.centerXAnchor.constraint(equalTo: accountIconContainer.centerXAnchor),
+            accountIconLabel.centerYAnchor.constraint(equalTo: accountIconContainer.centerYAnchor, constant: 2),
+            
+            accountCoinView.widthAnchor.constraint(equalToConstant: 16),
+            accountCoinView.heightAnchor.constraint(equalToConstant: 16),
+            accountCoinView.topAnchor.constraint(equalTo: accountIconContainer.topAnchor, constant: -2),
+            accountCoinView.trailingAnchor.constraint(equalTo: accountIconContainer.trailingAnchor, constant: 2),
+            
+            accountCoinLabel.centerXAnchor.constraint(equalTo: accountCoinView.centerXAnchor),
+            accountCoinLabel.centerYAnchor.constraint(equalTo: accountCoinView.centerYAnchor),
+            
+            balanceLabel.leadingAnchor.constraint(equalTo: headerCardView.leadingAnchor, constant: 24),
+            balanceLabel.trailingAnchor.constraint(equalTo: headerCardView.trailingAnchor, constant: -24),
+            balanceLabel.bottomAnchor.constraint(equalTo: headerCardView.bottomAnchor, constant: -24)
         ])
     }
     
-    private func setupTransferButton() {
-        mainStackView.addArrangedSubview(transferContainer)
-        transferContainer.addSubview(transferButton)
+    private func setupMovementsContainer() {
+        // Add movements container to main stack
+        mainStackView.addArrangedSubview(movementsContainerView)
+        // Slight overlap so the white content sheet sits attached to the magenta header
+        mainStackView.setCustomSpacing(-52, after: headerView)
+        movementsContainerView.addSubview(movementsContentBackgroundView)
+        movementsContainerView.addSubview(movementsTopShadowView)
+        movementsContainerView.addSubview(movementsTopDividerView)
+        movementsContainerView.addSubview(movementsStackView)
+        
+        if movementsTopShadowLayer.superlayer == nil {
+            movementsTopShadowView.layer.addSublayer(movementsTopShadowLayer)
+        }
+        
+        // Ensure movements container is above header
+        movementsContainerView.layer.zPosition = 10
+        
+        // Configure search bar
+        searchBarView.textField.placeholder = "Buscar movimiento"
+        searchBarView.filterButton.addTarget(self, action: #selector(filterButtonTapped), for: .touchUpInside)
+        
+        // Add search bar container at the top of movements stack
+        let searchBarContainer = UIView()
+        searchBarContainer.translatesAutoresizingMaskIntoConstraints = false
+        searchBarContainer.addSubview(searchBarView)
+        movementsStackView.addArrangedSubview(searchBarContainer)
         
         NSLayoutConstraint.activate([
-            transferContainer.heightAnchor.constraint(equalToConstant: 64),
+            movementsContentBackgroundView.topAnchor.constraint(equalTo: movementsContainerView.topAnchor, constant: -6),
+            movementsContentBackgroundView.leadingAnchor.constraint(equalTo: movementsContainerView.leadingAnchor),
+            movementsContentBackgroundView.trailingAnchor.constraint(equalTo: movementsContainerView.trailingAnchor),
+            movementsContentBackgroundView.bottomAnchor.constraint(equalTo: movementsContainerView.bottomAnchor),
             
-            transferButton.centerXAnchor.constraint(equalTo: transferContainer.centerXAnchor),
-            transferButton.centerYAnchor.constraint(equalTo: transferContainer.centerYAnchor)
+            movementsTopShadowView.topAnchor.constraint(equalTo: movementsContentBackgroundView.topAnchor, constant: 6),
+            movementsTopShadowView.leadingAnchor.constraint(equalTo: movementsContainerView.leadingAnchor),
+            movementsTopShadowView.trailingAnchor.constraint(equalTo: movementsContainerView.trailingAnchor),
+            movementsTopShadowView.heightAnchor.constraint(equalToConstant: 24),
+            
+            movementsTopDividerView.topAnchor.constraint(equalTo: movementsContentBackgroundView.topAnchor),
+            movementsTopDividerView.leadingAnchor.constraint(equalTo: movementsContainerView.leadingAnchor),
+            movementsTopDividerView.trailingAnchor.constraint(equalTo: movementsContainerView.trailingAnchor),
+            movementsTopDividerView.heightAnchor.constraint(equalToConstant: 0),
+            
+            searchBarContainer.heightAnchor.constraint(equalToConstant: 64),
+            searchBarView.leadingAnchor.constraint(equalTo: searchBarContainer.leadingAnchor),
+            searchBarView.trailingAnchor.constraint(equalTo: searchBarContainer.trailingAnchor),
+            searchBarView.centerYAnchor.constraint(equalTo: searchBarContainer.centerYAnchor),
+            searchBarView.heightAnchor.constraint(equalToConstant: 48)
         ])
-    }
-    
-    private func setupSearchBar() {
-        mainStackView.addArrangedSubview(searchContainer)
-        searchContainer.addSubview(searchBarView)
         
-        // Add filter chips below search bar
-        mainStackView.addArrangedSubview(filterChipsView)
+        // Add filter chips
+        movementsStackView.addArrangedSubview(filterChipsView)
         
-        // Add segmented control (Manual/Automático)
-        mainStackView.addArrangedSubview(segmentedControlContainer)
+        // Add segmented control (Manual/Automático) in the same row as "Hoy" header
+        movementsStackView.addArrangedSubview(segmentedControlContainer)
         segmentedControlContainer.addSubview(segmentedControlView)
         
         NSLayoutConstraint.activate([
             segmentedControlContainer.heightAnchor.constraint(equalToConstant: 40),
-            segmentedControlView.trailingAnchor.constraint(equalTo: segmentedControlContainer.trailingAnchor, constant: -12),
+            segmentedControlView.trailingAnchor.constraint(equalTo: segmentedControlContainer.trailingAnchor, constant: -16),
             segmentedControlView.centerYAnchor.constraint(equalTo: segmentedControlContainer.centerYAnchor)
         ])
         
@@ -465,25 +669,17 @@ final class CuentaViewController: UIViewController {
             self.isManualMode = (segment == .manual)
             self.stickySegmentedControlView.selectedSegment = segment
             
-            // Collapse current cell when switching modes
             self.currentlyExpandedCell?.collapse()
             self.currentlyExpandedCell = nil
         }
         
-        // Wire up filter button
-        searchBarView.filterButton.addTarget(self, action: #selector(filterButtonTapped), for: .touchUpInside)
-        
-        // Handle filter selection
+        // Handle filter callbacks
         filterChipsView.onFilterSelected = { [weak self] filterType, anchorView in
             self?.handleFilterSelection(filterType, anchorView: anchorView)
         }
         
-        // Handle filter cleared
         filterChipsView.onFilterCleared = { [weak self] filterType in
             guard let self = self else { return }
-            print("Filter cleared: \(filterType)")
-            
-            // Sync with sticky filter chips
             switch filterType {
             case "fecha":
                 self.stickyFilterChipsView.setDateFilter(nil)
@@ -497,50 +693,56 @@ final class CuentaViewController: UIViewController {
             }
         }
         
-        // Handle reset all filters
         filterChipsView.onResetAllFilters = { [weak self] in
             guard let self = self else { return }
-            print("All filters reset")
             self.stickyFilterChipsView.clearAllFilters()
             self.hasDateFilter = false
         }
         
+        // Add transfer button
+        let transferContainer = UIView()
+        transferContainer.translatesAutoresizingMaskIntoConstraints = false
+        transferContainer.addSubview(transferButton)
+        movementsStackView.addArrangedSubview(transferContainer)
+        
         NSLayoutConstraint.activate([
-            searchContainer.heightAnchor.constraint(equalToConstant: 64),
-            
-            searchBarView.leadingAnchor.constraint(equalTo: searchContainer.leadingAnchor, constant: 16),
-            searchBarView.trailingAnchor.constraint(equalTo: searchContainer.trailingAnchor, constant: -16),
-            searchBarView.centerYAnchor.constraint(equalTo: searchContainer.centerYAnchor)
+            transferContainer.heightAnchor.constraint(equalToConstant: 64),
+            transferButton.centerXAnchor.constraint(equalTo: transferContainer.centerXAnchor),
+            transferButton.centerYAnchor.constraint(equalTo: transferContainer.centerYAnchor)
         ])
-    }
-    
-    private func setupTransactions() {
-        mainStackView.addArrangedSubview(transactionsStackView)
-    }
-    
-    private func setupHistory() {
+        
+        // Add transactions stack
+        movementsStackView.addArrangedSubview(transactionsStackView)
+        
+        // Add history
         let historyContainer = UIView()
         historyContainer.translatesAutoresizingMaskIntoConstraints = false
-        
-        mainStackView.addArrangedSubview(historyContainer)
         historyContainer.addSubview(historyStackView)
+        movementsStackView.addArrangedSubview(historyContainer)
         
         NSLayoutConstraint.activate([
             historyStackView.topAnchor.constraint(equalTo: historyContainer.topAnchor, constant: 16),
-            historyStackView.leadingAnchor.constraint(equalTo: historyContainer.leadingAnchor, constant: 16),
-            historyStackView.trailingAnchor.constraint(equalTo: historyContainer.trailingAnchor, constant: -16),
+            historyStackView.leadingAnchor.constraint(equalTo: historyContainer.leadingAnchor),
+            historyStackView.trailingAnchor.constraint(equalTo: historyContainer.trailingAnchor),
             historyStackView.bottomAnchor.constraint(equalTo: historyContainer.bottomAnchor, constant: -32)
         ])
         
-        // Movimientos 2025
+        // Configure history sections
         let monthsSection = HistorySectionView()
         monthsSection.configure(title: "Movimientos 2025", items: ["Febrero", "Enero"])
         historyStackView.addArrangedSubview(monthsSection)
         
-        // Movimientos por año
         let yearsSection = HistorySectionView()
         yearsSection.configure(title: "Movimientos por año", items: ["2025", "2024"])
         historyStackView.addArrangedSubview(yearsSection)
+        
+        // Constraints for movements container
+        NSLayoutConstraint.activate([
+            movementsStackView.topAnchor.constraint(equalTo: movementsContentBackgroundView.topAnchor, constant: 16),
+            movementsStackView.leadingAnchor.constraint(equalTo: movementsContentBackgroundView.leadingAnchor, constant: 16),
+            movementsStackView.trailingAnchor.constraint(equalTo: movementsContentBackgroundView.trailingAnchor, constant: -16),
+            movementsStackView.bottomAnchor.constraint(equalTo: movementsContentBackgroundView.bottomAnchor, constant: -32)
+        ])
     }
     
     private func setupStickyHeader() {
@@ -729,8 +931,9 @@ final class CuentaViewController: UIViewController {
     // MARK: - Update UI
     private func updateUI() {
         // Use attributed strings for proper letter-spacing
-        balanceLabel.attributedText = .balance(account.formattedBalance)
-        accountNumberLabel.attributedText = .accountNumber(account.formattedAccountNumber)
+        balanceLabel.attributedText = makeHeaderBalanceText(account.formattedBalance)
+        accountTypeLabel.attributedText = makeHeaderMetaText(displayAccountType)
+        accountNumberLabel.attributedText = makeHeaderMetaText(account.accountNumber)
         
         // Clear existing transactions
         transactionsStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
@@ -792,6 +995,37 @@ final class CuentaViewController: UIViewController {
             
             transactionsStackView.addArrangedSubview(sectionContainer)
         }
+    }
+    
+    private var displayAccountType: String {
+        switch account.accountType.uppercased() {
+        case "AHO":
+            return "CUENTA DE AHORROS"
+        default:
+            return account.accountType.uppercased()
+        }
+    }
+    
+    private func makeHeaderMetaText(_ text: String) -> NSAttributedString {
+        NSAttributedString(
+            string: text.uppercased(),
+            attributes: [
+                .font: UIFont.manrope(size: 12, weight: .regular),
+                .foregroundColor: UIColor.white.withAlphaComponent(0.92),
+                .kern: 3.0
+            ]
+        )
+    }
+    
+    private func makeHeaderBalanceText(_ text: String) -> NSAttributedString {
+        NSAttributedString(
+            string: text,
+            attributes: [
+                .font: UIFont.manrope(size: 35, weight: .regular),
+                .foregroundColor: UIColor.white,
+                .kern: -2.5
+            ]
+        )
     }
     
     // MARK: - Actions
