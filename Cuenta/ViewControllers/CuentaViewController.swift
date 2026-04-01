@@ -311,7 +311,7 @@ final class CuentaViewController: UIViewController {
     private let movementsContainerView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = UIColor(red: 0.824, green: 0.0, blue: 0.431, alpha: 1)
+        view.backgroundColor = UIColor(red: 0.74, green: 0.0, blue: 0.56, alpha: 1)
         return view
     }()
     
