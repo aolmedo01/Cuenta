@@ -136,18 +136,16 @@ final class CuentaViewController: UIViewController {
     private let accountIconContainer: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = UIColor.white.withAlphaComponent(0.12)
-        view.layer.cornerRadius = 24
+        view.backgroundColor = .clear
         return view
     }()
     
-    private let accountIconLabel: UILabel = {
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.text = "🐷"
-        label.font = .systemFont(ofSize: 30)
-        label.textAlignment = .center
-        return label
+    private let accountIconImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.image = UIImage(named: "AccountIcon")
+        imageView.contentMode = .scaleAspectFit
+        return imageView
     }()
     
     private let accountCoinView: UIView = {
@@ -391,7 +389,7 @@ final class CuentaViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         let topInset = view.safeAreaInsets.top
-        toolbarTopConstraint?.constant = topInset + 6
+        toolbarTopConstraint?.constant = topInset + 16
         headerCardTopConstraint?.constant = -topInset
         headerCardHeightConstraint?.constant = headerBaseHeight + topInset
         headerViewHeightConstraint?.constant = headerBaseHeight + topInset
@@ -507,9 +505,8 @@ final class CuentaViewController: UIViewController {
         accountNumberContainer.addSubview(accountNumberLabel)
         
         headerCardView.addSubview(accountIconContainer)
-        accountIconContainer.addSubview(accountIconLabel)
-        accountIconContainer.addSubview(accountCoinView)
-        accountCoinView.addSubview(accountCoinLabel)
+        accountIconContainer.addSubview(accountIconImageView)
+        // accountCoinView not needed - SVG already includes coin
         
         headerCardView.addSubview(balanceLabel)
         
@@ -585,16 +582,10 @@ final class CuentaViewController: UIViewController {
             accountIconContainer.widthAnchor.constraint(equalToConstant: 48),
             accountIconContainer.heightAnchor.constraint(equalToConstant: 48),
             
-            accountIconLabel.centerXAnchor.constraint(equalTo: accountIconContainer.centerXAnchor),
-            accountIconLabel.centerYAnchor.constraint(equalTo: accountIconContainer.centerYAnchor, constant: 2),
-            
-            accountCoinView.widthAnchor.constraint(equalToConstant: 16),
-            accountCoinView.heightAnchor.constraint(equalToConstant: 16),
-            accountCoinView.topAnchor.constraint(equalTo: accountIconContainer.topAnchor, constant: -2),
-            accountCoinView.trailingAnchor.constraint(equalTo: accountIconContainer.trailingAnchor, constant: 2),
-            
-            accountCoinLabel.centerXAnchor.constraint(equalTo: accountCoinView.centerXAnchor),
-            accountCoinLabel.centerYAnchor.constraint(equalTo: accountCoinView.centerYAnchor),
+            accountIconImageView.centerXAnchor.constraint(equalTo: accountIconContainer.centerXAnchor),
+            accountIconImageView.centerYAnchor.constraint(equalTo: accountIconContainer.centerYAnchor),
+            accountIconImageView.widthAnchor.constraint(equalToConstant: 48),
+            accountIconImageView.heightAnchor.constraint(equalToConstant: 48),
             
             balanceLabel.leadingAnchor.constraint(equalTo: headerCardView.leadingAnchor, constant: 24),
             balanceLabel.trailingAnchor.constraint(equalTo: headerCardView.trailingAnchor, constant: -24),
