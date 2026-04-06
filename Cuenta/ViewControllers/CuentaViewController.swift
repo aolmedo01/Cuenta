@@ -1,6 +1,10 @@
 import UIKit
 
 final class CuentaViewController: UIViewController {
+    private enum Notifications {
+        static let didInvitePerson = Notification.Name("didInvitePersonFromAccountSettings")
+    }
+    
     private let headerBaseHeight: CGFloat = 232
     
     // MARK: - Properties
@@ -13,6 +17,7 @@ final class CuentaViewController: UIViewController {
     private var transactionSections: [TransactionSection] = []
     private var isCompactHeaderVisible = false
     private var scrollThreshold: CGFloat = 220 // Threshold when header content passes
+    private var shouldShowInviteHeaderPill = false
     
     // MARK: - UI Components
     private let scrollView: UIScrollView = {
@@ -92,6 +97,8 @@ final class CuentaViewController: UIViewController {
         button.addTarget(self, action: #selector(moreTapped), for: .touchUpInside)
         return button
     }()
+    
+    private lazy var headerAvatarsPillView: UIView = makeHeaderAvatarsPillView()
     
     private let balanceLabel: UILabel = {
         let label = UILabel()
@@ -396,9 +403,16 @@ final class CuentaViewController: UIViewController {
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleDidInvitePerson),
+            name: Notifications.didInvitePerson,
+            object: nil
+        )
         setupUI()
         setupData()
         updateUI()
+        updateHeaderAvatarsVisibility()
     }
     
     override func viewDidLayoutSubviews() {
@@ -427,6 +441,11 @@ final class CuentaViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)
+        updateHeaderAvatarsVisibility()
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
     
     // MARK: - Setup
@@ -529,6 +548,7 @@ final class CuentaViewController: UIViewController {
         toolbarView.addSubview(backButton)
         toolbarView.addSubview(cardButton)
         toolbarView.addSubview(moreButton)
+        toolbarView.addSubview(headerAvatarsPillView)
         
         headerCardView.addSubview(accountInfoStack)
         accountInfoStack.addArrangedSubview(accountTypeLabel)
@@ -544,6 +564,8 @@ final class CuentaViewController: UIViewController {
         backButton.applyStyle(.lightOnDark)
         cardButton.applyStyle(.lightOnDark)
         moreButton.applyStyle(.lightOnDark)
+        headerAvatarsPillView.alpha = 0
+        headerAvatarsPillView.isHidden = true
         
         headerGradientLayer.colors = [
             UIColor(red: 0.85, green: 0.0, blue: 0.45, alpha: 1).cgColor,
@@ -597,6 +619,12 @@ final class CuentaViewController: UIViewController {
             cardButton.trailingAnchor.constraint(equalTo: moreButton.leadingAnchor, constant: -10),
             cardButton.centerYAnchor.constraint(equalTo: toolbarView.centerYAnchor),
             
+            // Center avatars pill
+            headerAvatarsPillView.centerXAnchor.constraint(equalTo: toolbarView.centerXAnchor),
+            headerAvatarsPillView.centerYAnchor.constraint(equalTo: toolbarView.centerYAnchor),
+            headerAvatarsPillView.widthAnchor.constraint(equalToConstant: 140),
+            headerAvatarsPillView.heightAnchor.constraint(equalToConstant: 44),
+            
             accountInfoStack.topAnchor.constraint(equalTo: toolbarView.bottomAnchor, constant: 34),
             accountInfoStack.leadingAnchor.constraint(equalTo: headerCardView.leadingAnchor, constant: 24),
             accountInfoStack.trailingAnchor.constraint(lessThanOrEqualTo: accountIconContainer.leadingAnchor, constant: -16),
@@ -622,6 +650,49 @@ final class CuentaViewController: UIViewController {
             balanceLabel.trailingAnchor.constraint(equalTo: headerCardView.trailingAnchor, constant: -24),
             balanceLabel.bottomAnchor.constraint(equalTo: headerCardView.bottomAnchor, constant: -40)
         ])
+    }
+    
+    private func updateHeaderAvatarsVisibility() {
+        headerAvatarsPillView.isHidden = !shouldShowInviteHeaderPill
+        headerAvatarsPillView.alpha = shouldShowInviteHeaderPill ? 1 : 0
+    }
+    
+    @objc private func handleDidInvitePerson() {
+        shouldShowInviteHeaderPill = true
+        updateHeaderAvatarsVisibility()
+    }
+    
+    private func makeHeaderAvatarsPillView() -> UIView {
+        let pill = UIView()
+        pill.translatesAutoresizingMaskIntoConstraints = false
+        pill.backgroundColor = UIColor(red: 0.92, green: 0.72, blue: 0.88, alpha: 1)
+        pill.layer.cornerRadius = 22
+        pill.layer.borderWidth = 1.2
+        pill.layer.borderColor = UIColor.white.withAlphaComponent(0.85).cgColor
+        pill.clipsToBounds = true
+        
+        let avatarNames = ["InviteAvatar2", "InviteAvatar1", "InviteAvatar3"]
+        
+        for (index, imageName) in avatarNames.enumerated() {
+            let avatar = UIImageView()
+            avatar.translatesAutoresizingMaskIntoConstraints = false
+            avatar.image = UIImage(named: imageName)
+            avatar.contentMode = .scaleAspectFill
+            avatar.layer.cornerRadius = 18
+            avatar.layer.borderWidth = 1.5
+            avatar.layer.borderColor = UIColor.white.cgColor
+            avatar.clipsToBounds = true
+            pill.addSubview(avatar)
+            
+            NSLayoutConstraint.activate([
+                avatar.widthAnchor.constraint(equalToConstant: 36),
+                avatar.heightAnchor.constraint(equalToConstant: 36),
+                avatar.leadingAnchor.constraint(equalTo: pill.leadingAnchor, constant: 4 + (CGFloat(index) * 31)),
+                avatar.centerYAnchor.constraint(equalTo: pill.centerYAnchor)
+            ])
+        }
+        
+        return pill
     }
     
     private func setupMovementsContainer() {

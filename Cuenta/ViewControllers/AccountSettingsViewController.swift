@@ -1,6 +1,10 @@
 import UIKit
 
 final class AccountSettingsViewController: UIViewController {
+    private enum Notifications {
+        static let didInvitePerson = Notification.Name("didInvitePersonFromAccountSettings")
+    }
+    
     private enum Layout {
         static let horizontalInset: CGFloat = 24
     }
@@ -80,6 +84,9 @@ final class AccountSettingsViewController: UIViewController {
         label.setContentHuggingPriority(.required, for: .vertical)
         return label
     }()
+    
+    private lazy var inviteHeaderPillView: UIView = makeInviteHeaderPillView()
+    private var isInviteHeaderActive = false
 
     private let subtitleLabel: UILabel = {
         let label = UILabel()
@@ -138,11 +145,14 @@ final class AccountSettingsViewController: UIViewController {
         mainStackView.addArrangedSubview(toolbarView)
         toolbarView.addSubview(backButton)
         toolbarView.addSubview(titleStackView)
+        toolbarView.addSubview(inviteHeaderPillView)
 
         titleStackView.addArrangedSubview(titleLabel)
         titleStackView.addArrangedSubview(subtitleLabel)
 
         subtitleLabel.text = "AHO \(accountNumber)"
+        inviteHeaderPillView.alpha = 0
+        inviteHeaderPillView.isHidden = true
 
         NSLayoutConstraint.activate([
             toolbarView.heightAnchor.constraint(equalToConstant: 72),
@@ -157,6 +167,11 @@ final class AccountSettingsViewController: UIViewController {
             titleStackView.centerXAnchor.constraint(equalTo: toolbarView.centerXAnchor),
             titleStackView.centerYAnchor.constraint(equalTo: toolbarView.centerYAnchor),
             titleStackView.widthAnchor.constraint(lessThanOrEqualToConstant: 250),
+            
+            inviteHeaderPillView.widthAnchor.constraint(equalToConstant: 81.33),
+            inviteHeaderPillView.heightAnchor.constraint(equalToConstant: 44),
+            inviteHeaderPillView.centerXAnchor.constraint(equalTo: toolbarView.centerXAnchor, constant: -0.33),
+            inviteHeaderPillView.centerYAnchor.constraint(equalTo: toolbarView.centerYAnchor)
         ])
         
         mainStackView.setCustomSpacing(24, after: toolbarView)
@@ -400,6 +415,80 @@ final class AccountSettingsViewController: UIViewController {
         return container
     }
     
+    private func makeInviteHeaderPillView() -> UIView {
+        let pill = UIView()
+        pill.translatesAutoresizingMaskIntoConstraints = false
+        pill.backgroundColor = UIColor(red: 0.93, green: 0.83, blue: 0.90, alpha: 1)
+        pill.layer.cornerRadius = 22
+        pill.layer.borderWidth = 1
+        pill.layer.borderColor = UIColor.white.withAlphaComponent(0.85).cgColor
+        pill.clipsToBounds = true
+        
+        let avatars: [UIView] = [
+            makeAvatarView(imageName: "InviteAvatar1"),
+            makeAvatarView(imageName: "InviteAvatar2"),
+            makeAvatarView(imageName: "InviteAvatar3")
+        ]
+        
+        for (index, avatar) in avatars.enumerated() {
+            pill.addSubview(avatar)
+            NSLayoutConstraint.activate([
+                avatar.widthAnchor.constraint(equalToConstant: 36),
+                avatar.heightAnchor.constraint(equalToConstant: 36),
+                avatar.leadingAnchor.constraint(equalTo: pill.leadingAnchor, constant: 2 + (CGFloat(index) * 21)),
+                avatar.centerYAnchor.constraint(equalTo: pill.centerYAnchor)
+            ])
+        }
+        
+        return pill
+    }
+    
+    private func makeAvatarView(imageName: String) -> UIView {
+        let avatar = UIView()
+        avatar.translatesAutoresizingMaskIntoConstraints = false
+        avatar.layer.cornerRadius = 18
+        avatar.layer.borderWidth = 1.5
+        avatar.layer.borderColor = UIColor.white.cgColor
+        avatar.clipsToBounds = true
+        
+        let imageView = UIImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.image = UIImage(named: imageName)
+        imageView.contentMode = .scaleAspectFill
+        avatar.addSubview(imageView)
+        
+        NSLayoutConstraint.activate([
+            imageView.topAnchor.constraint(equalTo: avatar.topAnchor),
+            imageView.leadingAnchor.constraint(equalTo: avatar.leadingAnchor),
+            imageView.trailingAnchor.constraint(equalTo: avatar.trailingAnchor),
+            imageView.bottomAnchor.constraint(equalTo: avatar.bottomAnchor)
+        ])
+        
+        return avatar
+    }
+    
+    private func activateInviteHeader(animated: Bool = true) {
+        guard !isInviteHeaderActive else { return }
+        isInviteHeaderActive = true
+        inviteHeaderPillView.isHidden = false
+        
+        let animations = {
+            self.titleStackView.alpha = 0
+            self.inviteHeaderPillView.alpha = 1
+        }
+        
+        let completion: (Bool) -> Void = { _ in
+            self.titleStackView.isHidden = true
+        }
+        
+        if animated {
+            UIView.animate(withDuration: 0.25, delay: 0, options: [.curveEaseInOut], animations: animations, completion: completion)
+        } else {
+            animations()
+            completion(true)
+        }
+    }
+    
     // MARK: - Actions
     @objc private func backTapped() {
         let generator = UIImpactFeedbackGenerator(style: .light)
@@ -416,7 +505,13 @@ final class AccountSettingsViewController: UIViewController {
     @objc private func inviteRowTapped() {
         let generator = UIImpactFeedbackGenerator(style: .light)
         generator.impactOccurred()
-        print("Invite person tapped")
+        NotificationCenter.default.post(name: Notifications.didInvitePerson, object: nil)
+        
+        if let cuentaVC = navigationController?.viewControllers.first(where: { $0 is CuentaViewController }) {
+            navigationController?.popToViewController(cuentaVC, animated: true)
+        } else {
+            navigationController?.popToRootViewController(animated: true)
+        }
     }
     
     @objc private func firmAutorizadaTapped() {
