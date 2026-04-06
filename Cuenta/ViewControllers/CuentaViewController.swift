@@ -1382,6 +1382,9 @@ final class CuentaViewController: UIViewController, UIGestureRecognizerDelegate 
     
     // MARK: - Actions
     @objc private func backTapped() {
+        shouldShowInviteHeaderPill = false
+        isInviteProfilesExpanded = false
+        updateHeaderAvatarsVisibility()
         navigationController?.popViewController(animated: true)
     }
     
