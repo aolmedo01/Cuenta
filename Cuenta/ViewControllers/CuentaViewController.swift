@@ -193,16 +193,20 @@ final class CuentaViewController: UIViewController {
     private let stickyBalanceLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = UIFont.systemFont(ofSize: 22, weight: .bold)
+        label.font = .manrope(size: 14, weight: .semibold)
         label.textColor = .white
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = 0.8
         return label
     }()
     
     private let stickyAccountLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = UIFont.systemFont(ofSize: 11, weight: .medium)
-        label.textColor = .white.withAlphaComponent(0.8)
+        label.font = .manrope(size: 10, weight: .regular)
+        label.textColor = .white.withAlphaComponent(0.9)
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = 0.8
         return label
     }()
     
@@ -794,8 +798,10 @@ final class CuentaViewController: UIViewController {
         let infoStack = UIStackView()
         infoStack.translatesAutoresizingMaskIntoConstraints = false
         infoStack.axis = .vertical
-        infoStack.spacing = 2
+        infoStack.spacing = 3 // gap: 2.62px
         infoStack.alignment = .leading
+        infoStack.layoutMargins = UIEdgeInsets(top: 1, left: 2, bottom: 0, right: 0)
+        infoStack.isLayoutMarginsRelativeArrangement = true
         
         infoStack.addArrangedSubview(stickyBalanceLabel)
         infoStack.addArrangedSubview(stickyAccountLabel)
@@ -835,9 +841,18 @@ final class CuentaViewController: UIViewController {
             self?.hasDateFilter = false
         }
         
-        // Update sticky header content
-        stickyBalanceLabel.text = account.formattedBalance
-        stickyAccountLabel.text = "\(account.accountType) \(account.accountNumber)"
+        // Update sticky header content with letter spacing
+        // Balance: letter-spacing: -0.5px
+        let balanceText = account.formattedBalance
+        let balanceAttributed = NSMutableAttributedString(string: balanceText)
+        balanceAttributed.addAttribute(.kern, value: -0.5, range: NSRange(location: 0, length: balanceText.count))
+        stickyBalanceLabel.attributedText = balanceAttributed
+        
+        // Account: letter-spacing: 0.3px (reduced to fit)
+        let accountText = "CUENTA DE AHORROS"
+        let accountAttributed = NSMutableAttributedString(string: accountText)
+        accountAttributed.addAttribute(.kern, value: 0.3, range: NSRange(location: 0, length: accountText.count))
+        stickyAccountLabel.attributedText = accountAttributed
         
         stickyHeightConstraint = stickyHeaderView.heightAnchor.constraint(equalToConstant: 160) // Will be updated with safe area
         
@@ -852,16 +867,18 @@ final class CuentaViewController: UIViewController {
             stickyBackButton.leadingAnchor.constraint(equalTo: stickyHeaderView.leadingAnchor, constant: 16),
             stickyBackButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 12),
             
-            infoStack.leadingAnchor.constraint(equalTo: stickyBackButton.trailingAnchor, constant: 12),
-            infoStack.centerYAnchor.constraint(equalTo: stickyBackButton.centerYAnchor),
+            infoStack.leadingAnchor.constraint(equalTo: stickyBackButton.trailingAnchor, constant: 10),
+            infoStack.centerYAnchor.constraint(equalTo: stickyBackButton.centerYAnchor, constant: 1),
+            infoStack.heightAnchor.constraint(equalToConstant: 38),
+            infoStack.trailingAnchor.constraint(lessThanOrEqualTo: stickyCardButton.leadingAnchor, constant: -8),
             
             stickyMoreButton.trailingAnchor.constraint(equalTo: stickyHeaderView.trailingAnchor, constant: -16),
             stickyMoreButton.centerYAnchor.constraint(equalTo: stickyBackButton.centerYAnchor),
             
-            stickySearchButton.trailingAnchor.constraint(equalTo: stickyMoreButton.leadingAnchor, constant: -10),
+            stickySearchButton.trailingAnchor.constraint(equalTo: stickyMoreButton.leadingAnchor, constant: -8),
             stickySearchButton.centerYAnchor.constraint(equalTo: stickyBackButton.centerYAnchor),
             
-            stickyCardButton.trailingAnchor.constraint(equalTo: stickySearchButton.leadingAnchor, constant: -10),
+            stickyCardButton.trailingAnchor.constraint(equalTo: stickySearchButton.leadingAnchor, constant: -8),
             stickyCardButton.centerYAnchor.constraint(equalTo: stickyBackButton.centerYAnchor),
             
             // Filter chips view
