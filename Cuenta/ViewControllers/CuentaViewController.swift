@@ -140,6 +140,12 @@ final class CuentaViewController: UIViewController, UIGestureRecognizerDelegate 
         label.translatesAutoresizingMaskIntoConstraints = false
         label.font = .manrope(size: 12, weight: .regular)
         label.textColor = UIColor.white.withAlphaComponent(0.92)
+        label.numberOfLines = 1
+        label.lineBreakMode = .byTruncatingTail
+        label.setContentCompressionResistancePriority(.required, for: .horizontal)
+        label.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+        label.setContentCompressionResistancePriority(.required, for: .vertical)
+        label.setContentHuggingPriority(.required, for: .vertical)
         return label
     }()
     
@@ -660,9 +666,12 @@ final class CuentaViewController: UIViewController, UIGestureRecognizerDelegate 
             accountInfoTopConstraint!,
             accountInfoStack.leadingAnchor.constraint(equalTo: headerCardView.leadingAnchor, constant: 24),
             accountInfoStack.trailingAnchor.constraint(lessThanOrEqualTo: accountIconContainer.leadingAnchor, constant: -16),
+            accountTypeLabel.heightAnchor.constraint(equalToConstant: 13),
+            accountTypeLabel.trailingAnchor.constraint(lessThanOrEqualTo: accountInfoStack.trailingAnchor),
             
             accountNumberContainer.leadingAnchor.constraint(equalTo: accountInfoStack.leadingAnchor),
             accountNumberContainer.heightAnchor.constraint(equalToConstant: 18),
+            accountNumberContainer.trailingAnchor.constraint(lessThanOrEqualTo: accountInfoStack.trailingAnchor),
             
             accountNumberLabel.leadingAnchor.constraint(equalTo: accountNumberContainer.leadingAnchor),
             accountNumberLabel.centerYAnchor.constraint(equalTo: accountNumberContainer.centerYAnchor),
@@ -697,6 +706,8 @@ final class CuentaViewController: UIViewController, UIGestureRecognizerDelegate 
             accountIconTopConstraint?.constant = 32
             balanceBottomConstraint?.constant = -40
             accountIconImageView.image = UIImage(named: "AccountIcon")
+            accountTypeLabel.isHidden = false
+            accountTypeLabel.alpha = 1
             return
         }
         
@@ -706,12 +717,15 @@ final class CuentaViewController: UIViewController, UIGestureRecognizerDelegate 
         inviteProfilesContainerView.isHidden = showCompactPill
         inviteProfilesContainerView.alpha = showCompactPill ? 0 : 1
         
-        accountInfoTopConstraint?.constant = isInviteProfilesExpanded ? 120 : 34
-        accountIconTopConstraint?.constant = isInviteProfilesExpanded ? 118 : 32
+        accountInfoTopConstraint?.constant = isInviteProfilesExpanded ? 108 : 34
+        accountIconTopConstraint?.constant = isInviteProfilesExpanded ? 106 : 32
         balanceBottomConstraint?.constant = isInviteProfilesExpanded ? -28 : -40
+        accountTypeLabel.attributedText = makeHeaderMetaText("CUENTA DE AHORROS")
         accountIconImageView.image = UIImage(
             named: shouldShowInviteHeaderPill ? "AgregarPersonaIcon" : "AccountIcon"
         )
+        accountTypeLabel.isHidden = false
+        accountTypeLabel.alpha = 1
     }
     
     @objc private func handleDidInvitePerson() {
@@ -878,12 +892,15 @@ final class CuentaViewController: UIViewController, UIGestureRecognizerDelegate 
             self.inviteProfilesContainerView.alpha = expanded ? 1 : 0
             self.headerViewHeightConstraint?.constant = currentHeaderHeight
             self.headerCardHeightConstraint?.constant = currentHeaderHeight
-            self.accountInfoTopConstraint?.constant = expanded ? 120 : 34
-            self.accountIconTopConstraint?.constant = expanded ? 118 : 32
+            self.accountInfoTopConstraint?.constant = expanded ? 108 : 34
+            self.accountIconTopConstraint?.constant = expanded ? 106 : 32
             self.balanceBottomConstraint?.constant = expanded ? -28 : -40
+            self.accountTypeLabel.attributedText = self.makeHeaderMetaText("CUENTA DE AHORROS")
             self.accountIconImageView.image = UIImage(
                 named: self.shouldShowInviteHeaderPill ? "AgregarPersonaIcon" : "AccountIcon"
             )
+            self.accountTypeLabel.isHidden = false
+            self.accountTypeLabel.alpha = 1
             self.view.layoutIfNeeded()
             // Keep gradient and glow synced with the animated header size to avoid a visible horizontal seam.
             self.headerGradientLayer.frame = self.headerCardView.bounds
@@ -1259,9 +1276,13 @@ final class CuentaViewController: UIViewController, UIGestureRecognizerDelegate 
     
     // MARK: - Update UI
     private func updateUI() {
+        let headerAccountType = displayAccountType.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ? "CUENTA DE AHORROS"
+            : displayAccountType
+        
         // Use attributed strings for proper letter-spacing
         balanceLabel.attributedText = makeHeaderBalanceText(account.formattedBalance)
-        accountTypeLabel.attributedText = makeHeaderMetaText(displayAccountType)
+        accountTypeLabel.attributedText = makeHeaderMetaText(headerAccountType)
         accountNumberLabel.attributedText = makeHeaderMetaText(account.accountNumber)
         
         // Clear existing transactions
