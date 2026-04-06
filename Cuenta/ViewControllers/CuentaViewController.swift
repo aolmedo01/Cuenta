@@ -119,8 +119,8 @@ final class CuentaViewController: UIViewController, UIGestureRecognizerDelegate 
         label.font = .balanceTitle
         label.textColor = .white
         label.numberOfLines = 1
-        label.adjustsFontSizeToFitWidth = true
-        label.minimumScaleFactor = 0.8
+        label.adjustsFontSizeToFitWidth = false
+        label.setContentCompressionResistancePriority(.required, for: .horizontal)
         return label
     }()
     
@@ -882,6 +882,9 @@ final class CuentaViewController: UIViewController, UIGestureRecognizerDelegate 
                 named: self.shouldShowInviteHeaderPill ? "AgregarPersonaIcon" : "AccountIcon"
             )
             self.view.layoutIfNeeded()
+            // Keep gradient and glow synced with the animated header size to avoid a visible horizontal seam.
+            self.headerGradientLayer.frame = self.headerCardView.bounds
+            self.headerGlowLayer.frame = self.headerCardView.bounds
         }
         
         let completion: (Bool) -> Void = { _ in
