@@ -255,6 +255,7 @@ final class TransactionCell: UIView {
         label.text = "Si el tiempo expira, el dinero regresará a tu cuenta."
         label.font = .manrope(size: 11, weight: .regular)
         label.textColor = UIColor(red: 0.541, green: 0.576, blue: 0.659, alpha: 1) // #8A93A8
+        label.textAlignment = .center
         label.isHidden = true
         return label
     }()
@@ -403,8 +404,8 @@ final class TransactionCell: UIView {
             amountStack.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
             
             // Collapsed Warning Label - fixed position at bottom area of card
-            // Position: 16px from left/right, 80px from top (below title+badge area)
-            collapsedWarningLabel.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 80),
+            // Slightly lower to create more breathing room below the status badge.
+            collapsedWarningLabel.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 86),
             collapsedWarningLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
             collapsedWarningLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
 
@@ -619,6 +620,7 @@ final class TransactionCell: UIView {
         statusBadge.isHidden = true
         collapsedWarningLabel.isHidden = true
         balanceLabel.isHidden = false
+        labelsStack.setCustomSpacing(0, after: titleLabel)
         
         // Reset electricity labels
         subtitle2Label.isHidden = true
@@ -644,7 +646,7 @@ final class TransactionCell: UIView {
         balanceLabel.text = transaction.formattedBalance
         
         // Amount color - electricity and withdrawal types use dark color, others use positive/negative
-        if transaction.type == .electricity || (transaction.type == .withdrawal && transaction.status == .toWithdraw) {
+        if transaction.type == .electricity || ((transaction.type == .withdrawal || transaction.type == .atmWithdrawal) && transaction.status == .toWithdraw) {
             amountLabel.textColor = UIColor(red: 0.129, green: 0.157, blue: 0.227, alpha: 1) // #21283A
         } else {
             amountLabel.textColor = transaction.isPositive ? .amountPositive : .amountNegative
@@ -656,6 +658,7 @@ final class TransactionCell: UIView {
             statusBadge.isHidden = false
             collapsedWarningLabel.isHidden = false
             balanceLabel.isHidden = true // No balance shown for pending withdrawals
+            labelsStack.setCustomSpacing(8, after: titleLabel)
             statusLabel.text = "Por retirar"
             // Extract hours from timeRemaining (e.g., "23h 15m" -> "23 h")
             if let timeRemaining = transaction.timeRemaining {
@@ -665,8 +668,8 @@ final class TransactionCell: UIView {
                 statusTimeLabel.text = "23 h"
             }
             subtitleLabel.isHidden = true
-            // Adjust height for withdrawal with warning - needs extra space for warning text
-            collapsedHeight = 120
+            // Needs extra room for badge + bottom helper text.
+            collapsedHeight = 130
             if !isExpanded {
                 heightConstraint?.constant = collapsedHeight
             }
@@ -690,6 +693,8 @@ final class TransactionCell: UIView {
         case .transfer:
             iconName = "arrow.left.arrow.right"
         case .withdrawal:
+            iconName = "dollarsign.square" // banking-online icon
+        case .atmWithdrawal:
             iconName = "dollarsign.square" // banking-online icon
         case .deposit:
             iconName = "arrow.down"
@@ -722,6 +727,8 @@ final class TransactionCell: UIView {
             typeDescription = transaction.isPositive ? "Transferencia recibida" : "Transferencia enviada"
         case .withdrawal:
             typeDescription = "Retiro en cajero"
+        case .atmWithdrawal:
+            typeDescription = "Retiro en cajero"
         case .deposit:
             typeDescription = "Transferencia desde Banco Pichincha"
         case .payment:
@@ -740,6 +747,9 @@ final class TransactionCell: UIView {
         // Reference number (mock)
         let referenceNumber = String(format: "%015d", Int.random(in: 100000...999999999))
         referenciaRow.setValue(referenceNumber)
+        
+        // Track pending ATM/cardless withdrawal early so height/layout logic can use it.
+        isWithdrawalPending = (transaction.type == .withdrawal || transaction.type == .atmWithdrawal) && transaction.status == .toWithdraw
         
         // Check if this is electricity type (CNEL) - special compact expanded view
         isElectricityType = transaction.type == .electricity
@@ -781,8 +791,8 @@ final class TransactionCell: UIView {
             extraBalance1Label.isHidden = true
             extraBalance2Label.isHidden = true
             
-            // Reset to normal height (100px with padding)
-            collapsedHeight = 100
+            // Keep pending-withdrawal height; otherwise use default height.
+            collapsedHeight = isWithdrawalPending ? collapsedHeight : 100
             if !isExpanded {
                 heightConstraint?.constant = collapsedHeight
             }
@@ -794,10 +804,13 @@ final class TransactionCell: UIView {
             amountStackCenterYConstraint?.isActive = true
         }
         
-        // Check if this is a cardless withdrawal (Retiro sin tarjeta)
-        isWithdrawalPending = transaction.type == .withdrawal && transaction.status == .toWithdraw
-        
         if isWithdrawalPending {
+            // For pending ATM withdrawals, align content to top so amount sits at top-right.
+            labelsStackCenterYConstraint?.isActive = false
+            amountStackCenterYConstraint?.isActive = false
+            labelsStackTopConstraint?.isActive = true
+            amountStackTopConstraint?.isActive = true
+            
             // Hide standard rows (only tipo and referencia)
             tipoRow.isHidden = true
             referenciaRow.isHidden = true
@@ -823,6 +836,12 @@ final class TransactionCell: UIView {
             progressWidthConstraint = progressBarFill.widthAnchor.constraint(equalTo: progressBarContainer.widthAnchor, multiplier: progress)
             progressWidthConstraint?.isActive = true
         } else {
+            // Default alignment for other transaction types.
+            labelsStackTopConstraint?.isActive = false
+            amountStackTopConstraint?.isActive = false
+            labelsStackCenterYConstraint?.isActive = true
+            amountStackCenterYConstraint?.isActive = true
+            
             // Show standard rows
             fechaRow.isHidden = false
             tipoRow.isHidden = false

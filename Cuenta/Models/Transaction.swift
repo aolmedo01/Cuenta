@@ -5,6 +5,7 @@ import UIKit
 enum TransactionType: String {
     case transfer = "transfer"
     case withdrawal = "withdrawal"
+    case atmWithdrawal = "atmWithdrawal"
     case deposit = "deposit"
     case payment = "payment"
     case goal = "goal"

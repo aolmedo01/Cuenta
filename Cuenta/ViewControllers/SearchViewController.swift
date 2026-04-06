@@ -340,6 +340,20 @@ final class SearchViewController: UIViewController {
         
         allTransactions = [
             // Hoy
+            Transaction(
+                id: UUID(),
+                name: "Retiro sin tarjeta",
+                description: "",
+                amount: -50.00,
+                balance: 0,
+                date: today,
+                type: .atmWithdrawal,
+                status: .toWithdraw,
+                recipientName: "Dani Olmedo",
+                recipientPhone: "099 999 9999",
+                timeRemaining: "23h 15m",
+                progressRemaining: 0.75
+            ),
             Transaction(id: UUID(), name: "Jessica Alfonso", description: "Movimiento interno", amount: 1600.00, balance: 1640.00, date: today, type: .transfer),
             Transaction(id: UUID(), name: "CNEL", description: "Pago de servicio luz", amount: -120.21, balance: 80.00, date: today, type: .electricity, serviceAmount: 120.00, commission: 0.18, tax: 0.03),
             Transaction(id: UUID(), name: "Carla Lecaro", description: "Mercado frutas", amount: -60.00, balance: 200.00, date: today, type: .payment),
