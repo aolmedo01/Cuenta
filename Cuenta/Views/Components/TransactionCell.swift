@@ -255,7 +255,7 @@ final class TransactionCell: UIView {
         label.text = "Si el tiempo expira, el dinero regresará a tu cuenta."
         label.font = .manrope(size: 11, weight: .regular)
         label.textColor = UIColor(red: 0.541, green: 0.576, blue: 0.659, alpha: 1) // #8A93A8
-        label.textAlignment = .center
+        label.textAlignment = .left
         label.isHidden = true
         return label
     }()
@@ -406,7 +406,7 @@ final class TransactionCell: UIView {
             // Collapsed Warning Label - fixed position at bottom area of card
             // Slightly lower to create more breathing room below the status badge.
             collapsedWarningLabel.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 86),
-            collapsedWarningLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
+            collapsedWarningLabel.leadingAnchor.constraint(equalTo: labelsStack.leadingAnchor),
             collapsedWarningLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
 
             // Detail Container - starts below the collapsed row area (80px to give header more room)
