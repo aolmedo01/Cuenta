@@ -626,7 +626,7 @@ final class SearchViewController: UIViewController {
             self?.activeDropdown = nil
             self?.activeFilterType = nil
         }
-        dropdown.show(from: anchorView, in: view)
+        dropdown.show(from: anchorView, in: view, alignment: .trailing)
         activeDropdown = dropdown
         activeFilterType = "monto"
     }
