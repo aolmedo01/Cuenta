@@ -15,6 +15,8 @@ final class TransactionCell: UIView {
     
     private var heightConstraint: NSLayoutConstraint?
     private var detailViewHeightConstraint: NSLayoutConstraint?
+    private var detailContainerTopConstraint: NSLayoutConstraint?
+    private var collapsedWarningTopConstraint: NSLayoutConstraint?
     
     // Dynamic vertical constraints for labels and amounts
     private var labelsStackCenterYConstraint: NSLayoutConstraint?
@@ -364,6 +366,8 @@ final class TransactionCell: UIView {
         
         heightConstraint = heightAnchor.constraint(equalToConstant: collapsedHeight)
         detailViewHeightConstraint = detailContainerView.heightAnchor.constraint(equalToConstant: 0)
+        detailContainerTopConstraint = detailContainerView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 80)
+        collapsedWarningTopConstraint = collapsedWarningLabel.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 86)
         
         NSLayoutConstraint.activate([
             // Container View
@@ -405,12 +409,12 @@ final class TransactionCell: UIView {
             
             // Collapsed Warning Label - fixed position at bottom area of card
             // Slightly lower to create more breathing room below the status badge.
-            collapsedWarningLabel.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 86),
+            collapsedWarningTopConstraint!,
             collapsedWarningLabel.leadingAnchor.constraint(equalTo: labelsStack.leadingAnchor),
             collapsedWarningLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
 
             // Detail Container - starts below the collapsed row area (80px to give header more room)
-            detailContainerView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 80),
+            detailContainerTopConstraint!,
             detailContainerView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
             detailContainerView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
             detailViewHeightConstraint!,
@@ -621,6 +625,8 @@ final class TransactionCell: UIView {
         collapsedWarningLabel.isHidden = true
         balanceLabel.isHidden = false
         labelsStack.setCustomSpacing(0, after: titleLabel)
+        detailContainerTopConstraint?.constant = 80
+        collapsedWarningTopConstraint?.constant = 86
         
         // Reset electricity labels
         subtitle2Label.isHidden = true
@@ -755,6 +761,8 @@ final class TransactionCell: UIView {
         isElectricityType = transaction.type == .electricity
         
         if isElectricityType {
+            detailContainerTopConstraint?.constant = 104
+            
             // Show extra info in collapsed state
             subtitle2Label.isHidden = false
             subtitle3Label.isHidden = false
