@@ -1,11 +1,12 @@
 import UIKit
 
-final class CuentaViewController: UIViewController {
+final class CuentaViewController: UIViewController, UIGestureRecognizerDelegate {
     private enum Notifications {
         static let didInvitePerson = Notification.Name("didInvitePersonFromAccountSettings")
     }
     
     private let headerBaseHeight: CGFloat = 232
+    private let headerExpandedExtraHeight: CGFloat = 52
     
     // MARK: - Properties
     private var account = Account(
@@ -18,6 +19,7 @@ final class CuentaViewController: UIViewController {
     private var isCompactHeaderVisible = false
     private var scrollThreshold: CGFloat = 220 // Threshold when header content passes
     private var shouldShowInviteHeaderPill = false
+    private var isInviteProfilesExpanded = false
     
     // MARK: - UI Components
     private let scrollView: UIScrollView = {
@@ -73,11 +75,21 @@ final class CuentaViewController: UIViewController {
     private var headerCardHeightConstraint: NSLayoutConstraint?
     private var headerCardTopConstraint: NSLayoutConstraint?
     private var toolbarTopConstraint: NSLayoutConstraint?
+    private var accountInfoTopConstraint: NSLayoutConstraint?
+    private var accountIconTopConstraint: NSLayoutConstraint?
+    private var balanceBottomConstraint: NSLayoutConstraint?
     
     private let toolbarView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
+    }()
+    
+    private lazy var headerCollapseTapGesture: UITapGestureRecognizer = {
+        let gesture = UITapGestureRecognizer(target: self, action: #selector(headerTapped))
+        gesture.cancelsTouchesInView = false
+        gesture.delegate = self
+        return gesture
     }()
     
     private lazy var backButton: CircleIconButton = {
@@ -99,6 +111,7 @@ final class CuentaViewController: UIViewController {
     }()
     
     private lazy var headerAvatarsPillView: UIView = makeHeaderAvatarsPillView()
+    private lazy var inviteProfilesContainerView: UIView = makeInviteProfilesContainerView()
     
     private let balanceLabel: UILabel = {
         let label = UILabel()
@@ -420,8 +433,9 @@ final class CuentaViewController: UIViewController {
         let topInset = view.safeAreaInsets.top
         toolbarTopConstraint?.constant = topInset + 16
         headerCardTopConstraint?.constant = -topInset
-        headerCardHeightConstraint?.constant = headerBaseHeight + topInset
-        headerViewHeightConstraint?.constant = headerBaseHeight + topInset
+        let currentHeaderHeight = headerBaseHeight + topInset + (isInviteProfilesExpanded ? headerExpandedExtraHeight : 0)
+        headerCardHeightConstraint?.constant = currentHeaderHeight
+        headerViewHeightConstraint?.constant = currentHeaderHeight
         headerGradientLayer.frame = headerCardView.bounds
         headerGlowLayer.frame = headerCardView.bounds
         movementsTopShadowLayer.frame = movementsTopShadowView.bounds
@@ -549,6 +563,8 @@ final class CuentaViewController: UIViewController {
         toolbarView.addSubview(cardButton)
         toolbarView.addSubview(moreButton)
         toolbarView.addSubview(headerAvatarsPillView)
+        headerCardView.addSubview(inviteProfilesContainerView)
+        headerCardView.addGestureRecognizer(headerCollapseTapGesture)
         
         headerCardView.addSubview(accountInfoStack)
         accountInfoStack.addArrangedSubview(accountTypeLabel)
@@ -566,6 +582,11 @@ final class CuentaViewController: UIViewController {
         moreButton.applyStyle(.lightOnDark)
         headerAvatarsPillView.alpha = 0
         headerAvatarsPillView.isHidden = true
+        inviteProfilesContainerView.alpha = 0
+        inviteProfilesContainerView.isHidden = true
+        
+        let tap = UITapGestureRecognizer(target: self, action: #selector(avatarsPillTapped))
+        headerAvatarsPillView.addGestureRecognizer(tap)
         
         headerGradientLayer.colors = [
             UIColor(red: 0.85, green: 0.0, blue: 0.45, alpha: 1).cgColor,
@@ -592,6 +613,10 @@ final class CuentaViewController: UIViewController {
         headerCardHeightConstraint = headerCardView.heightAnchor.constraint(equalToConstant: headerBaseHeight)
         headerCardTopConstraint = headerCardView.topAnchor.constraint(equalTo: headerView.topAnchor, constant: 0)
         toolbarTopConstraint = toolbarView.topAnchor.constraint(equalTo: headerCardView.topAnchor, constant: 50)
+        
+        accountInfoTopConstraint = accountInfoStack.topAnchor.constraint(equalTo: toolbarView.bottomAnchor, constant: 34)
+        accountIconTopConstraint = accountIconContainer.topAnchor.constraint(equalTo: toolbarView.bottomAnchor, constant: 32)
+        balanceBottomConstraint = balanceLabel.bottomAnchor.constraint(equalTo: headerCardView.bottomAnchor, constant: -40)
         
         NSLayoutConstraint.activate([
             headerViewHeightConstraint!,
@@ -625,7 +650,12 @@ final class CuentaViewController: UIViewController {
             headerAvatarsPillView.widthAnchor.constraint(equalToConstant: 81.33),
             headerAvatarsPillView.heightAnchor.constraint(equalToConstant: 44),
             
-            accountInfoStack.topAnchor.constraint(equalTo: toolbarView.bottomAnchor, constant: 34),
+            inviteProfilesContainerView.topAnchor.constraint(equalTo: toolbarView.bottomAnchor, constant: 30),
+            inviteProfilesContainerView.centerXAnchor.constraint(equalTo: headerCardView.centerXAnchor),
+            inviteProfilesContainerView.widthAnchor.constraint(equalToConstant: 264),
+            inviteProfilesContainerView.heightAnchor.constraint(equalToConstant: 65),
+            
+            accountInfoTopConstraint!,
             accountInfoStack.leadingAnchor.constraint(equalTo: headerCardView.leadingAnchor, constant: 24),
             accountInfoStack.trailingAnchor.constraint(lessThanOrEqualTo: accountIconContainer.leadingAnchor, constant: -16),
             
@@ -637,7 +667,7 @@ final class CuentaViewController: UIViewController {
             accountNumberLabel.trailingAnchor.constraint(equalTo: accountNumberContainer.trailingAnchor),
             
             accountIconContainer.trailingAnchor.constraint(equalTo: headerCardView.trailingAnchor, constant: -24),
-            accountIconContainer.topAnchor.constraint(equalTo: toolbarView.bottomAnchor, constant: 32),
+            accountIconTopConstraint!,
             accountIconContainer.widthAnchor.constraint(equalToConstant: 48),
             accountIconContainer.heightAnchor.constraint(equalToConstant: 48),
             
@@ -648,13 +678,37 @@ final class CuentaViewController: UIViewController {
             
             balanceLabel.leadingAnchor.constraint(equalTo: headerCardView.leadingAnchor, constant: 24),
             balanceLabel.trailingAnchor.constraint(equalTo: headerCardView.trailingAnchor, constant: -24),
-            balanceLabel.bottomAnchor.constraint(equalTo: headerCardView.bottomAnchor, constant: -40)
+            balanceLabel.topAnchor.constraint(greaterThanOrEqualTo: accountInfoStack.bottomAnchor, constant: 16),
+            balanceBottomConstraint!
         ])
     }
     
     private func updateHeaderAvatarsVisibility() {
-        headerAvatarsPillView.isHidden = !shouldShowInviteHeaderPill
-        headerAvatarsPillView.alpha = shouldShowInviteHeaderPill ? 1 : 0
+        if !shouldShowInviteHeaderPill {
+            headerAvatarsPillView.isHidden = true
+            headerAvatarsPillView.alpha = 0
+            inviteProfilesContainerView.isHidden = true
+            inviteProfilesContainerView.alpha = 0
+            isInviteProfilesExpanded = false
+            accountInfoTopConstraint?.constant = 34
+            accountIconTopConstraint?.constant = 32
+            balanceBottomConstraint?.constant = -40
+            accountIconImageView.image = UIImage(named: "AccountIcon")
+            return
+        }
+        
+        let showCompactPill = !isInviteProfilesExpanded
+        headerAvatarsPillView.isHidden = !showCompactPill
+        headerAvatarsPillView.alpha = showCompactPill ? 1 : 0
+        inviteProfilesContainerView.isHidden = showCompactPill
+        inviteProfilesContainerView.alpha = showCompactPill ? 0 : 1
+        
+        accountInfoTopConstraint?.constant = isInviteProfilesExpanded ? 120 : 34
+        accountIconTopConstraint?.constant = isInviteProfilesExpanded ? 118 : 32
+        balanceBottomConstraint?.constant = isInviteProfilesExpanded ? -28 : -40
+        accountIconImageView.image = UIImage(
+            named: shouldShowInviteHeaderPill ? "AgregarPersonaIcon" : "AccountIcon"
+        )
     }
     
     @objc private func handleDidInvitePerson() {
@@ -691,6 +745,163 @@ final class CuentaViewController: UIViewController {
         }
         
         return pill
+    }
+    
+    private func makeInviteProfilesContainerView() -> UIView {
+        let container = UIView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+        
+        let stack = UIStackView()
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        stack.axis = .horizontal
+        stack.alignment = .top
+        stack.distribution = .fillEqually
+        stack.spacing = 24
+        
+        stack.addArrangedSubview(makeInviteProfileItem(name: "Dani", imageName: "InviteAvatar2"))
+        stack.addArrangedSubview(makeInviteProfileItem(name: "Carlos", imageName: "InviteAvatar3"))
+        stack.addArrangedSubview(makeInviteProfileItem(name: "Lorena", imageName: "InviteAvatar1"))
+        stack.addArrangedSubview(makeInviteProfileItem(name: "Invitar", imageName: nil))
+        
+        container.addSubview(stack)
+        
+        NSLayoutConstraint.activate([
+            stack.topAnchor.constraint(equalTo: container.topAnchor),
+            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor)
+        ])
+        
+        return container
+    }
+    
+    private func makeInviteProfileItem(name: String, imageName: String?) -> UIView {
+        let container = UIView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+        
+        let avatar = UIView()
+        avatar.translatesAutoresizingMaskIntoConstraints = false
+        avatar.layer.cornerRadius = 24
+        avatar.clipsToBounds = true
+        
+        if let imageName = imageName {
+            let imageView = UIImageView()
+            imageView.translatesAutoresizingMaskIntoConstraints = false
+            imageView.image = UIImage(named: imageName)
+            imageView.contentMode = .scaleAspectFill
+            imageView.layer.cornerRadius = 20
+            imageView.clipsToBounds = true
+            avatar.addSubview(imageView)
+            
+            NSLayoutConstraint.activate([
+                imageView.topAnchor.constraint(equalTo: avatar.topAnchor, constant: 4),
+                imageView.leadingAnchor.constraint(equalTo: avatar.leadingAnchor, constant: 4),
+                imageView.trailingAnchor.constraint(equalTo: avatar.trailingAnchor, constant: -4),
+                imageView.bottomAnchor.constraint(equalTo: avatar.bottomAnchor, constant: -4)
+            ])
+        } else {
+            let plusBackground = UIView()
+            plusBackground.translatesAutoresizingMaskIntoConstraints = false
+            plusBackground.backgroundColor = UIColor.white.withAlphaComponent(0.2)
+            plusBackground.layer.cornerRadius = 20
+            plusBackground.clipsToBounds = true
+            avatar.addSubview(plusBackground)
+            
+            let plusIcon = UIImageView()
+            plusIcon.translatesAutoresizingMaskIntoConstraints = false
+            plusIcon.image = UIImage(systemName: "plus")?
+                .withConfiguration(UIImage.SymbolConfiguration(pointSize: 24, weight: .regular))
+            plusIcon.tintColor = .white
+            plusBackground.addSubview(plusIcon)
+            
+            NSLayoutConstraint.activate([
+                plusBackground.widthAnchor.constraint(equalToConstant: 40),
+                plusBackground.heightAnchor.constraint(equalToConstant: 40),
+                plusBackground.centerXAnchor.constraint(equalTo: avatar.centerXAnchor),
+                plusBackground.centerYAnchor.constraint(equalTo: avatar.centerYAnchor),
+                
+                plusIcon.centerXAnchor.constraint(equalTo: plusBackground.centerXAnchor),
+                plusIcon.centerYAnchor.constraint(equalTo: plusBackground.centerYAnchor)
+            ])
+        }
+        
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.text = name
+        label.textAlignment = .center
+        label.textColor = .white
+        label.font = .manrope(size: 11, weight: .regular)
+        
+        container.addSubview(avatar)
+        container.addSubview(label)
+        
+        NSLayoutConstraint.activate([
+            avatar.topAnchor.constraint(equalTo: container.topAnchor),
+            avatar.centerXAnchor.constraint(equalTo: container.centerXAnchor),
+            avatar.widthAnchor.constraint(equalToConstant: 48),
+            avatar.heightAnchor.constraint(equalToConstant: 48),
+            
+            label.topAnchor.constraint(equalTo: avatar.bottomAnchor, constant: 4),
+            label.centerXAnchor.constraint(equalTo: container.centerXAnchor),
+            label.bottomAnchor.constraint(lessThanOrEqualTo: container.bottomAnchor)
+        ])
+        
+        return container
+    }
+    
+    @objc private func avatarsPillTapped() {
+        guard shouldShowInviteHeaderPill else { return }
+        setInviteProfilesExpanded(!isInviteProfilesExpanded, animated: true)
+    }
+    
+    @objc private func headerTapped() {
+        guard isInviteProfilesExpanded else { return }
+        setInviteProfilesExpanded(false, animated: true)
+    }
+    
+    private func setInviteProfilesExpanded(_ expanded: Bool, animated: Bool) {
+        isInviteProfilesExpanded = expanded
+        
+        if expanded {
+            inviteProfilesContainerView.isHidden = false
+        } else {
+            headerAvatarsPillView.isHidden = false
+        }
+        
+        let animations = {
+            let topInset = self.view.safeAreaInsets.top
+            let currentHeaderHeight = self.headerBaseHeight + topInset + (expanded ? self.headerExpandedExtraHeight : 0)
+            self.headerAvatarsPillView.alpha = expanded ? 0 : 1
+            self.inviteProfilesContainerView.alpha = expanded ? 1 : 0
+            self.headerViewHeightConstraint?.constant = currentHeaderHeight
+            self.headerCardHeightConstraint?.constant = currentHeaderHeight
+            self.accountInfoTopConstraint?.constant = expanded ? 120 : 34
+            self.accountIconTopConstraint?.constant = expanded ? 118 : 32
+            self.balanceBottomConstraint?.constant = expanded ? -28 : -40
+            self.accountIconImageView.image = UIImage(
+                named: self.shouldShowInviteHeaderPill ? "AgregarPersonaIcon" : "AccountIcon"
+            )
+            self.view.layoutIfNeeded()
+        }
+        
+        let completion: (Bool) -> Void = { _ in
+            self.headerAvatarsPillView.isHidden = expanded
+            self.inviteProfilesContainerView.isHidden = !expanded
+        }
+        
+        if animated {
+            UIView.animate(withDuration: 0.24, delay: 0, options: [.curveEaseInOut], animations: animations, completion: completion)
+        } else {
+            animations()
+            completion(true)
+        }
+    }
+    
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        if touch.view is UIControl {
+            return false
+        }
+        return true
     }
     
     private func setupMovementsContainer() {
