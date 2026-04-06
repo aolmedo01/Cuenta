@@ -126,7 +126,7 @@ final class SearchViewController: UIViewController {
             searchContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             searchContainerView.trailingAnchor.constraint(equalTo: cancelButton.leadingAnchor, constant: -12),
             searchContainerView.heightAnchor.constraint(equalToConstant: 48),
-            
+             
             // Search icon
             searchIcon.leadingAnchor.constraint(equalTo: searchContainerView.leadingAnchor, constant: 16),
             searchIcon.centerYAnchor.constraint(equalTo: searchContainerView.centerYAnchor),

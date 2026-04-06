@@ -11,7 +11,7 @@ final class TransactionCell: UIView {
     var onShareTapped: ((Transaction) -> Void)?
     
     private var collapsedHeight: CGFloat = 100
-    private var expandedHeight: CGFloat = 280
+    private var expandedHeight: CGFloat = 304
     
     private var heightConstraint: NSLayoutConstraint?
     private var detailViewHeightConstraint: NSLayoutConstraint?
@@ -408,8 +408,8 @@ final class TransactionCell: UIView {
             collapsedWarningLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
             collapsedWarningLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
 
-            // Detail Container - starts below the collapsed row area
-            detailContainerView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 56),
+            // Detail Container - starts below the collapsed row area (80px to give header more room)
+            detailContainerView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 80),
             detailContainerView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
             detailContainerView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
             detailViewHeightConstraint!,
@@ -496,7 +496,7 @@ final class TransactionCell: UIView {
         isExpanded.toggle()
         
         // Different heights for withdrawal vs standard transactions
-        let withdrawalExpandedHeight: CGFloat = 277
+        let withdrawalExpandedHeight: CGFloat = 301
         let standardExpandedHeight: CGFloat = expandedHeight
         let targetExpandedHeight = isWithdrawalPending ? withdrawalExpandedHeight : standardExpandedHeight
         
