@@ -1311,7 +1311,7 @@ final class CuentaViewController: UIViewController, UIGestureRecognizerDelegate 
             let sectionStack = UIStackView()
             sectionStack.translatesAutoresizingMaskIntoConstraints = false
             sectionStack.axis = .vertical
-            sectionStack.spacing = 16
+            sectionStack.spacing = 8
             
             // Section header (skip for first section "Hoy" as it's in the segmented control row)
             if index > 0 {

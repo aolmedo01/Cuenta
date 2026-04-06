@@ -403,7 +403,7 @@ final class SearchViewController: UIViewController {
             // Create a section stack for transactions with 16px spacing
             let sectionStack = UIStackView()
             sectionStack.axis = .vertical
-            sectionStack.spacing = 16
+            sectionStack.spacing = 8
             sectionStack.translatesAutoresizingMaskIntoConstraints = false
             
             // Add transactions to section stack
