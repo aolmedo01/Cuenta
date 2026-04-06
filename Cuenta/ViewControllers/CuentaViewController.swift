@@ -679,8 +679,6 @@ final class CuentaViewController: UIViewController {
             avatar.image = UIImage(named: imageName)
             avatar.contentMode = .scaleAspectFill
             avatar.layer.cornerRadius = 18
-            avatar.layer.borderWidth = 1.5
-            avatar.layer.borderColor = UIColor.white.cgColor
             avatar.clipsToBounds = true
             pill.addSubview(avatar)
             
