@@ -622,7 +622,7 @@ final class CuentaViewController: UIViewController {
             // Center avatars pill
             headerAvatarsPillView.centerXAnchor.constraint(equalTo: toolbarView.centerXAnchor),
             headerAvatarsPillView.centerYAnchor.constraint(equalTo: toolbarView.centerYAnchor),
-            headerAvatarsPillView.widthAnchor.constraint(equalToConstant: 140),
+            headerAvatarsPillView.widthAnchor.constraint(equalToConstant: 81.33),
             headerAvatarsPillView.heightAnchor.constraint(equalToConstant: 44),
             
             accountInfoStack.topAnchor.constraint(equalTo: toolbarView.bottomAnchor, constant: 34),
@@ -687,7 +687,7 @@ final class CuentaViewController: UIViewController {
             NSLayoutConstraint.activate([
                 avatar.widthAnchor.constraint(equalToConstant: 36),
                 avatar.heightAnchor.constraint(equalToConstant: 36),
-                avatar.leadingAnchor.constraint(equalTo: pill.leadingAnchor, constant: 4 + (CGFloat(index) * 31)),
+                avatar.leadingAnchor.constraint(equalTo: pill.leadingAnchor, constant: 2 + (CGFloat(index) * 21)),
                 avatar.centerYAnchor.constraint(equalTo: pill.centerYAnchor)
             ])
         }
