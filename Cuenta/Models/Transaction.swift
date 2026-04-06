@@ -19,6 +19,7 @@ enum TransactionStatus: String {
     case completed = "completed"
     case pending = "pending"
     case toWithdraw = "toWithdraw" // Por retirar
+    case reversal = "reversal" // Reverso
 }
 
 // MARK: - Transaction Model

@@ -359,6 +359,16 @@ final class SearchViewController: UIViewController {
             Transaction(id: UUID(), name: "Carla Lecaro", description: "Mercado frutas", amount: -60.00, balance: 200.00, date: today, type: .payment),
             
             // Ayer
+            Transaction(
+                id: UUID(),
+                name: "Uber rides",
+                description: "",
+                amount: 60.00,
+                balance: 200.00,
+                date: yesterday,
+                type: .deposit,
+                status: .reversal
+            ),
             Transaction(id: UUID(), name: "Isabela Jacome", description: "Alquiler", amount: 60.00, balance: 260.00, date: yesterday, type: .deposit),
             Transaction(id: UUID(), name: "Transferencia a tu meta", description: "Vacaciones Argentina", amount: -10.00, balance: 250.00, date: yesterday, type: .goal),
             Transaction(id: UUID(), name: "Retiro en ventanilla", description: "Agencia Mall del Sol", amount: -50.00, balance: 260.00, date: yesterday, type: .withdrawal),

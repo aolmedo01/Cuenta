@@ -627,6 +627,13 @@ final class TransactionCell: UIView {
         labelsStack.setCustomSpacing(0, after: titleLabel)
         detailContainerTopConstraint?.constant = 80
         collapsedWarningTopConstraint?.constant = 86
+        statusBadge.backgroundColor = UIColor(red: 0.906, green: 0.937, blue: 1.0, alpha: 1) // #E7EFFF
+        statusClockIcon.image = UIImage(systemName: "clock")?
+            .withConfiguration(UIImage.SymbolConfiguration(pointSize: 14, weight: .medium))
+        statusClockIcon.tintColor = UIColor(red: 0.035, green: 0.231, blue: 0.596, alpha: 1) // #093B98
+        statusLabel.textColor = UIColor(red: 0.035, green: 0.231, blue: 0.596, alpha: 1) // #093B98
+        statusTimeLabel.textColor = UIColor(red: 0.035, green: 0.231, blue: 0.596, alpha: 1) // #093B98
+        statusTimeLabel.isHidden = false
         
         // Reset electricity labels
         subtitle2Label.isHidden = true
@@ -673,24 +680,41 @@ final class TransactionCell: UIView {
             } else {
                 statusTimeLabel.text = "23 h"
             }
+            statusTimeLabel.isHidden = false
             subtitleLabel.isHidden = true
             // Needs extra room for badge + bottom helper text.
             collapsedHeight = 130
             if !isExpanded {
                 heightConstraint?.constant = collapsedHeight
             }
+        case .reversal:
+            statusBadge.isHidden = false
+            collapsedWarningLabel.isHidden = true
+            balanceLabel.isHidden = false
+            labelsStack.setCustomSpacing(8, after: titleLabel)
+            statusBadge.backgroundColor = UIColor(red: 0.996, green: 0.922, blue: 0.812, alpha: 1) // light orange
+            statusClockIcon.image = UIImage(systemName: "arrow.uturn.backward.circle")?
+                .withConfiguration(UIImage.SymbolConfiguration(pointSize: 14, weight: .medium))
+            statusClockIcon.tintColor = UIColor(red: 0.792, green: 0.451, blue: 0.0, alpha: 1)
+            statusLabel.textColor = UIColor(red: 0.792, green: 0.451, blue: 0.0, alpha: 1)
+            statusTimeLabel.text = ""
+            statusTimeLabel.isHidden = true
+            statusLabel.text = "Reverso"
+            subtitleLabel.isHidden = true
         case .pending:
             statusBadge.isHidden = false
             collapsedWarningLabel.isHidden = true
             balanceLabel.isHidden = false
             statusLabel.text = "Pendiente"
             statusTimeLabel.text = ""
+            statusTimeLabel.isHidden = true
             subtitleLabel.isHidden = true
         case .completed:
             statusBadge.isHidden = true
             collapsedWarningLabel.isHidden = true
             balanceLabel.isHidden = false
             subtitleLabel.isHidden = false
+            statusTimeLabel.isHidden = false
         }
         
         // Icon based on type
