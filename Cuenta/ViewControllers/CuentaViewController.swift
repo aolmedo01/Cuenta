@@ -93,6 +93,12 @@ final class CuentaViewController: UIViewController {
         return button
     }()
     
+    private lazy var searchButton: CircleIconButton = {
+        let button = CircleIconButton(systemName: "magnifyingglass")
+        button.addTarget(self, action: #selector(searchTapped), for: .touchUpInside)
+        return button
+    }()
+    
     private let balanceLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -209,6 +215,12 @@ final class CuentaViewController: UIViewController {
     private lazy var stickyMoreButton: CircleIconButton = {
         let button = CircleIconButton(systemName: "ellipsis")
         button.addTarget(self, action: #selector(stickyMoreTapped), for: .touchUpInside)
+        return button
+    }()
+    
+    private lazy var stickySearchButton: CircleIconButton = {
+        let button = CircleIconButton(systemName: "magnifyingglass")
+        button.addTarget(self, action: #selector(searchTapped), for: .touchUpInside)
         return button
     }()
     
@@ -524,6 +536,7 @@ final class CuentaViewController: UIViewController {
         headerCardView.addSubview(toolbarView)
         toolbarView.addSubview(backButton)
         toolbarView.addSubview(cardButton)
+        toolbarView.addSubview(searchButton)
         toolbarView.addSubview(moreButton)
         
         headerCardView.addSubview(accountInfoStack)
@@ -539,6 +552,7 @@ final class CuentaViewController: UIViewController {
         
         backButton.applyStyle(.lightOnDark)
         cardButton.applyStyle(.lightOnDark)
+        searchButton.applyStyle(.lightOnDark)
         moreButton.applyStyle(.lightOnDark)
         
         headerGradientLayer.colors = [
@@ -589,8 +603,12 @@ final class CuentaViewController: UIViewController {
             moreButton.trailingAnchor.constraint(equalTo: toolbarView.trailingAnchor),
             moreButton.centerYAnchor.constraint(equalTo: toolbarView.centerYAnchor),
             
+            // Search Button
+            searchButton.trailingAnchor.constraint(equalTo: moreButton.leadingAnchor, constant: -10),
+            searchButton.centerYAnchor.constraint(equalTo: toolbarView.centerYAnchor),
+            
             // Card Button
-            cardButton.trailingAnchor.constraint(equalTo: moreButton.leadingAnchor, constant: -10),
+            cardButton.trailingAnchor.constraint(equalTo: searchButton.leadingAnchor, constant: -10),
             cardButton.centerYAnchor.constraint(equalTo: toolbarView.centerYAnchor),
             
             accountInfoStack.topAnchor.constraint(equalTo: toolbarView.bottomAnchor, constant: 34),
@@ -637,18 +655,8 @@ final class CuentaViewController: UIViewController {
         // Ensure movements container is above header
         movementsContainerView.layer.zPosition = 10
         
-        // Configure search bar
-        searchBarView.textField.placeholder = "Buscar movimiento"
-        searchBarView.filterButton.addTarget(self, action: #selector(filterButtonTapped), for: .touchUpInside)
-        searchBarView.onSearchBarTapped = { [weak self] in
-            self?.openSearchScreen()
-        }
-        
-        // Add search bar container at the top of movements stack
-        let searchBarContainer = UIView()
-        searchBarContainer.translatesAutoresizingMaskIntoConstraints = false
-        searchBarContainer.addSubview(searchBarView)
-        movementsStackView.addArrangedSubview(searchBarContainer)
+        // Search bar hidden - using search button in header instead
+        // searchBarView is kept for potential future use but not added to view hierarchy
         
         NSLayoutConstraint.activate([
             movementsContentBackgroundView.topAnchor.constraint(equalTo: movementsContainerView.topAnchor, constant: -6),
@@ -664,13 +672,7 @@ final class CuentaViewController: UIViewController {
             movementsTopDividerView.topAnchor.constraint(equalTo: movementsContentBackgroundView.topAnchor),
             movementsTopDividerView.leadingAnchor.constraint(equalTo: movementsContainerView.leadingAnchor),
             movementsTopDividerView.trailingAnchor.constraint(equalTo: movementsContainerView.trailingAnchor),
-            movementsTopDividerView.heightAnchor.constraint(equalToConstant: 0),
-            
-            searchBarContainer.heightAnchor.constraint(equalToConstant: 64),
-            searchBarView.leadingAnchor.constraint(equalTo: searchBarContainer.leadingAnchor),
-            searchBarView.trailingAnchor.constraint(equalTo: searchBarContainer.trailingAnchor, constant: -4),
-            searchBarView.centerYAnchor.constraint(equalTo: searchBarContainer.centerYAnchor),
-            searchBarView.heightAnchor.constraint(equalToConstant: 56)
+            movementsTopDividerView.heightAnchor.constraint(equalToConstant: 0)
         ])
         
         // Add filter chips
@@ -786,6 +788,7 @@ final class CuentaViewController: UIViewController {
         // Apply light on dark style to buttons
         stickyBackButton.applyStyle(.lightOnDark)
         stickyCardButton.applyStyle(.lightOnDark)
+        stickySearchButton.applyStyle(.lightOnDark)
         stickyMoreButton.applyStyle(.lightOnDark)
         
         let infoStack = UIStackView()
@@ -800,6 +803,7 @@ final class CuentaViewController: UIViewController {
         stickyHeaderView.addSubview(stickyBackButton)
         stickyHeaderView.addSubview(infoStack)
         stickyHeaderView.addSubview(stickyCardButton)
+        stickyHeaderView.addSubview(stickySearchButton)
         stickyHeaderView.addSubview(stickyMoreButton)
         
         // Add FilterChipsView to sticky header
@@ -854,7 +858,10 @@ final class CuentaViewController: UIViewController {
             stickyMoreButton.trailingAnchor.constraint(equalTo: stickyHeaderView.trailingAnchor, constant: -16),
             stickyMoreButton.centerYAnchor.constraint(equalTo: stickyBackButton.centerYAnchor),
             
-            stickyCardButton.trailingAnchor.constraint(equalTo: stickyMoreButton.leadingAnchor, constant: -10),
+            stickySearchButton.trailingAnchor.constraint(equalTo: stickyMoreButton.leadingAnchor, constant: -10),
+            stickySearchButton.centerYAnchor.constraint(equalTo: stickyBackButton.centerYAnchor),
+            
+            stickyCardButton.trailingAnchor.constraint(equalTo: stickySearchButton.leadingAnchor, constant: -10),
             stickyCardButton.centerYAnchor.constraint(equalTo: stickyBackButton.centerYAnchor),
             
             // Filter chips view
@@ -1063,6 +1070,10 @@ final class CuentaViewController: UIViewController {
     
     @objc private func cardTapped() {
         print("Card tapped")
+    }
+    
+    @objc private func searchTapped() {
+        openSearchScreen()
     }
     
     @objc private func moreTapped() {
