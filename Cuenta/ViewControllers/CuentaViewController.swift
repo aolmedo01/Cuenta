@@ -121,6 +121,8 @@ final class CuentaViewController: UIViewController, UIGestureRecognizerDelegate 
         label.numberOfLines = 1
         label.adjustsFontSizeToFitWidth = false
         label.setContentCompressionResistancePriority(.required, for: .horizontal)
+        label.setContentCompressionResistancePriority(.required, for: .vertical)
+        label.clipsToBounds = false
         return label
     }()
     
@@ -678,6 +680,7 @@ final class CuentaViewController: UIViewController, UIGestureRecognizerDelegate 
             
             balanceLabel.leadingAnchor.constraint(equalTo: headerCardView.leadingAnchor, constant: 24),
             balanceLabel.trailingAnchor.constraint(equalTo: headerCardView.trailingAnchor, constant: -24),
+            balanceLabel.heightAnchor.constraint(greaterThanOrEqualToConstant: 48),
             balanceLabel.topAnchor.constraint(greaterThanOrEqualTo: accountInfoStack.bottomAnchor, constant: 16),
             balanceBottomConstraint!
         ])
