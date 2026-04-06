@@ -1,6 +1,17 @@
 import UIKit
 
 final class AccountSettingsViewController: UIViewController {
+    private enum Layout {
+        static let horizontalInset: CGFloat = 24
+    }
+    
+    private enum Palette {
+        static let title = UIColor(red: 0.18, green: 0.19, blue: 0.23, alpha: 1)
+        static let subtitle = UIColor(red: 0.55, green: 0.55, blue: 0.57, alpha: 1)
+        static let sectionTitle = UIColor(red: 0.31, green: 0.36, blue: 0.49, alpha: 1)
+        static let bodyText = UIColor(red: 0.35, green: 0.40, blue: 0.51, alpha: 1)
+        static let rowText = UIColor(red: 0.17, green: 0.21, blue: 0.30, alpha: 1)
+    }
     
     // MARK: - Data
     private var accountName: String = "AHO"
@@ -34,11 +45,18 @@ final class AccountSettingsViewController: UIViewController {
     private let toolbarView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .clear
         return view
     }()
     
-    private lazy var backButton: CircleIconButton = {
-        let button = CircleIconButton(systemName: "chevron.left")
+    private lazy var backButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.setImage(UIImage(systemName: "chevron.left"), for: .normal)
+        button.tintColor = UIColor(red: 0.251, green: 0.251, blue: 0.251, alpha: 1)
+        button.backgroundColor = UIColor(white: 0.95, alpha: 1)
+        button.layer.cornerRadius = 22
+        button.layer.masksToBounds = true
         button.addTarget(self, action: #selector(backTapped), for: .touchUpInside)
         return button
     }()
@@ -47,27 +65,29 @@ final class AccountSettingsViewController: UIViewController {
         let stack = UIStackView()
         stack.translatesAutoresizingMaskIntoConstraints = false
         stack.axis = .vertical
-        stack.spacing = 2
+        stack.spacing = 0
         stack.alignment = .center
         return stack
     }()
-    
+
     private let titleLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
         label.text = "Configurar cuenta"
-        label.font = UIFont.systemFont(ofSize: 17, weight: .semibold)
-        label.textColor = .textPrimary
+        label.font = .manrope(size: 15, weight: .semibold)
+        label.textColor = Palette.title
         label.textAlignment = .center
+        label.setContentHuggingPriority(.required, for: .vertical)
         return label
     }()
-    
+
     private let subtitleLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = .manrope(size: 12, weight: .regular)
-        label.textColor = UIColor(red: 0.318, green: 0.353, blue: 0.451, alpha: 1)
+        label.font = .manrope(size: 12, weight: .medium)
+        label.textColor = Palette.subtitle
         label.textAlignment = .center
+        label.setContentHuggingPriority(.required, for: .vertical)
         return label
     }()
     
@@ -117,22 +137,29 @@ final class AccountSettingsViewController: UIViewController {
     private func setupToolbar() {
         mainStackView.addArrangedSubview(toolbarView)
         toolbarView.addSubview(backButton)
-        
+        toolbarView.addSubview(titleStackView)
+
         titleStackView.addArrangedSubview(titleLabel)
         titleStackView.addArrangedSubview(subtitleLabel)
-        toolbarView.addSubview(titleStackView)
-        
+
         subtitleLabel.text = "AHO \(accountNumber)"
-        
+
         NSLayoutConstraint.activate([
-            toolbarView.heightAnchor.constraint(equalToConstant: 54),
-            
-            backButton.leadingAnchor.constraint(equalTo: toolbarView.leadingAnchor, constant: 16),
+            toolbarView.heightAnchor.constraint(equalToConstant: 72),
+            toolbarView.leadingAnchor.constraint(equalTo: mainStackView.leadingAnchor),
+            toolbarView.trailingAnchor.constraint(equalTo: mainStackView.trailingAnchor),
+
+            backButton.leadingAnchor.constraint(equalTo: toolbarView.leadingAnchor, constant: Layout.horizontalInset),
             backButton.centerYAnchor.constraint(equalTo: toolbarView.centerYAnchor),
-            
+            backButton.widthAnchor.constraint(equalToConstant: 44),
+            backButton.heightAnchor.constraint(equalToConstant: 44),
+
             titleStackView.centerXAnchor.constraint(equalTo: toolbarView.centerXAnchor),
-            titleStackView.centerYAnchor.constraint(equalTo: toolbarView.centerYAnchor)
+            titleStackView.centerYAnchor.constraint(equalTo: toolbarView.centerYAnchor),
+            titleStackView.widthAnchor.constraint(lessThanOrEqualToConstant: 250),
         ])
+        
+        mainStackView.setCustomSpacing(24, after: toolbarView)
     }
     
     private func setupProfileSection() {
@@ -142,7 +169,7 @@ final class AccountSettingsViewController: UIViewController {
         let circleView = UIView()
         circleView.translatesAutoresizingMaskIntoConstraints = false
         circleView.backgroundColor = UIColor(red: 0.85, green: 0.0, blue: 0.56, alpha: 1)
-        circleView.layer.cornerRadius = 70
+        circleView.layer.cornerRadius = 112
         circleView.clipsToBounds = true
         
         let chanchitoImageView = UIImageView()
@@ -156,30 +183,31 @@ final class AccountSettingsViewController: UIViewController {
         let editButton = UIButton(type: .system)
         editButton.translatesAutoresizingMaskIntoConstraints = false
         editButton.setTitle("Editar", for: .normal)
-        editButton.setTitleColor(.textPrimary, for: .normal)
+        editButton.setTitleColor(Palette.rowText, for: .normal)
         editButton.titleLabel?.font = .manrope(size: 15, weight: .medium)
         editButton.addTarget(self, action: #selector(editProfileTapped), for: .touchUpInside)
         
         profileContainer.addSubview(editButton)
         
         NSLayoutConstraint.activate([
-            profileContainer.heightAnchor.constraint(equalToConstant: 200),
+            profileContainer.heightAnchor.constraint(equalToConstant: 250),
             
             circleView.centerXAnchor.constraint(equalTo: profileContainer.centerXAnchor),
-            circleView.topAnchor.constraint(equalTo: profileContainer.topAnchor, constant: 20),
-            circleView.widthAnchor.constraint(equalToConstant: 140),
-            circleView.heightAnchor.constraint(equalToConstant: 140),
+            circleView.topAnchor.constraint(equalTo: profileContainer.topAnchor, constant: 8),
+            circleView.widthAnchor.constraint(equalToConstant: 224),
+            circleView.heightAnchor.constraint(equalToConstant: 224),
             
             chanchitoImageView.centerXAnchor.constraint(equalTo: circleView.centerXAnchor),
             chanchitoImageView.centerYAnchor.constraint(equalTo: circleView.centerYAnchor),
-            chanchitoImageView.widthAnchor.constraint(equalToConstant: 80),
-            chanchitoImageView.heightAnchor.constraint(equalToConstant: 80),
+            chanchitoImageView.widthAnchor.constraint(equalToConstant: 118),
+            chanchitoImageView.heightAnchor.constraint(equalToConstant: 118),
             
             editButton.centerXAnchor.constraint(equalTo: profileContainer.centerXAnchor),
             editButton.topAnchor.constraint(equalTo: circleView.bottomAnchor, constant: 12)
         ])
         
         mainStackView.addArrangedSubview(profileContainer)
+        mainStackView.setCustomSpacing(12, after: profileContainer)
     }
     
     private func setupAccountNameSection() {
@@ -190,7 +218,7 @@ final class AccountSettingsViewController: UIViewController {
         containerStack.translatesAutoresizingMaskIntoConstraints = false
         containerStack.axis = .vertical
         containerStack.spacing = 8
-        containerStack.layoutMargins = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
+        containerStack.layoutMargins = UIEdgeInsets(top: 0, left: Layout.horizontalInset, bottom: 0, right: Layout.horizontalInset)
         containerStack.isLayoutMarginsRelativeArrangement = true
         
         let nameRow = createAccountNameRow()
@@ -202,7 +230,7 @@ final class AccountSettingsViewController: UIViewController {
         descriptionLabel.translatesAutoresizingMaskIntoConstraints = false
         descriptionLabel.text = "En pagos y transferencias, se mostrará el nombre de tu cuenta en lugar del número, para que puedas identificarla fácilmente."
         descriptionLabel.font = .manrope(size: 12, weight: .regular)
-        descriptionLabel.textColor = UIColor(red: 0.318, green: 0.353, blue: 0.451, alpha: 1)
+        descriptionLabel.textColor = Palette.bodyText
         descriptionLabel.numberOfLines = 0
         
         let descContainer = UIView()
@@ -210,13 +238,14 @@ final class AccountSettingsViewController: UIViewController {
         descContainer.addSubview(descriptionLabel)
         
         NSLayoutConstraint.activate([
-            descriptionLabel.topAnchor.constraint(equalTo: descContainer.topAnchor, constant: 8),
-            descriptionLabel.leadingAnchor.constraint(equalTo: descContainer.leadingAnchor, constant: 16),
-            descriptionLabel.trailingAnchor.constraint(equalTo: descContainer.trailingAnchor, constant: -16),
-            descriptionLabel.bottomAnchor.constraint(equalTo: descContainer.bottomAnchor, constant: -8)
+            descriptionLabel.topAnchor.constraint(equalTo: descContainer.topAnchor, constant: 10),
+            descriptionLabel.leadingAnchor.constraint(equalTo: descContainer.leadingAnchor, constant: Layout.horizontalInset),
+            descriptionLabel.trailingAnchor.constraint(equalTo: descContainer.trailingAnchor, constant: -Layout.horizontalInset),
+            descriptionLabel.bottomAnchor.constraint(equalTo: descContainer.bottomAnchor, constant: -12)
         ])
         
         mainStackView.addArrangedSubview(descContainer)
+        mainStackView.setCustomSpacing(26, after: descContainer)
     }
     
     private func setupAccessSection() {
@@ -227,7 +256,7 @@ final class AccountSettingsViewController: UIViewController {
         containerStack.translatesAutoresizingMaskIntoConstraints = false
         containerStack.axis = .vertical
         containerStack.spacing = 8
-        containerStack.layoutMargins = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
+        containerStack.layoutMargins = UIEdgeInsets(top: 0, left: Layout.horizontalInset, bottom: 0, right: Layout.horizontalInset)
         containerStack.isLayoutMarginsRelativeArrangement = true
         
         let inviteRow = createInviteRow()
@@ -251,13 +280,13 @@ final class AccountSettingsViewController: UIViewController {
         label.translatesAutoresizingMaskIntoConstraints = false
         label.text = title
         label.font = .manrope(size: 15, weight: .semibold)
-        label.textColor = .accentBlue
+        label.textColor = Palette.sectionTitle
         
         container.addSubview(label)
         
         NSLayoutConstraint.activate([
             container.heightAnchor.constraint(equalToConstant: 44),
-            label.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
+            label.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: Layout.horizontalInset),
             label.centerYAnchor.constraint(equalTo: container.centerYAnchor)
         ])
         
@@ -273,14 +302,14 @@ final class AccountSettingsViewController: UIViewController {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
         label.text = "Agregar a una persona"
-        label.font = UIFont.systemFont(ofSize: 17, weight: .regular)
-        label.textColor = .black
+        label.font = .manrope(size: 17, weight: .regular)
+        label.textColor = Palette.rowText
         
         let chevron = UIImageView()
         chevron.translatesAutoresizingMaskIntoConstraints = false
         chevron.image = UIImage(systemName: "chevron.right")?
             .withConfiguration(UIImage.SymbolConfiguration(pointSize: 14, weight: .semibold))
-        chevron.tintColor = UIColor(red: 0.129, green: 0.157, blue: 0.227, alpha: 1)
+        chevron.tintColor = Palette.rowText
         
         container.addSubview(label)
         container.addSubview(chevron)
@@ -291,9 +320,9 @@ final class AccountSettingsViewController: UIViewController {
         
         NSLayoutConstraint.activate([
             container.heightAnchor.constraint(equalToConstant: 52),
-            label.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
+            label.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 20),
             label.centerYAnchor.constraint(equalTo: container.centerYAnchor),
-            chevron.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -16),
+            chevron.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -20),
             chevron.centerYAnchor.constraint(equalTo: container.centerYAnchor),
             chevron.widthAnchor.constraint(equalToConstant: 16),
             chevron.heightAnchor.constraint(equalToConstant: 16)
@@ -315,7 +344,7 @@ final class AccountSettingsViewController: UIViewController {
         
         attributedString.addAttributes([
             .font: UIFont.manrope(size: 12, weight: .regular),
-            .foregroundColor: UIColor(red: 0.318, green: 0.353, blue: 0.451, alpha: 1)
+            .foregroundColor: Palette.bodyText
         ], range: NSRange(location: 0, length: fullText.count))
         
         if let linkRange = fullText.range(of: linkText) {
@@ -335,9 +364,9 @@ final class AccountSettingsViewController: UIViewController {
         container.addSubview(label)
         
         NSLayoutConstraint.activate([
-            label.topAnchor.constraint(equalTo: container.topAnchor, constant: 8),
-            label.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
-            label.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -16),
+            label.topAnchor.constraint(equalTo: container.topAnchor, constant: 10),
+            label.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: Layout.horizontalInset),
+            label.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -Layout.horizontalInset),
             label.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -16)
         ])
         
@@ -353,8 +382,8 @@ final class AccountSettingsViewController: UIViewController {
         let nameLabel = UILabel()
         nameLabel.translatesAutoresizingMaskIntoConstraints = false
         nameLabel.text = accountName
-        nameLabel.font = UIFont.systemFont(ofSize: 17, weight: .regular)
-        nameLabel.textColor = .black
+        nameLabel.font = .manrope(size: 17, weight: .regular)
+        nameLabel.textColor = Palette.rowText
         
         container.addSubview(nameLabel)
         
@@ -364,7 +393,7 @@ final class AccountSettingsViewController: UIViewController {
         
         NSLayoutConstraint.activate([
             container.heightAnchor.constraint(equalToConstant: 52),
-            nameLabel.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
+            nameLabel.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 20),
             nameLabel.centerYAnchor.constraint(equalTo: container.centerYAnchor)
         ])
         
