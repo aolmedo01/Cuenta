@@ -326,7 +326,10 @@ final class SearchViewController: UIViewController {
         filterChipsView.onResetAllFilters = { [weak self] in
             guard let self = self else { return }
             self.selectedDateFilterIndex = 0
-            // UI only - filters cleared visually, no actual filtering
+            self.selectedDateRange = nil
+            self.selectedType = nil
+            self.selectedAmountRange = nil
+            self.applyFilters()
         }
     }
     
@@ -468,14 +471,15 @@ final class SearchViewController: UIViewController {
         switch filterType {
         case "fecha":
             selectedDateFilterIndex = 0
+            selectedDateRange = nil
         case "tipo":
-            break
+            selectedType = nil
         case "monto":
-            break
+            selectedAmountRange = nil
         default:
             break
         }
-        // UI only - no actual filtering
+        applyFilters()
     }
     
     private func showDateRangePicker(anchorView: UIView) {
@@ -525,7 +529,8 @@ final class SearchViewController: UIViewController {
                 }
                 
                 self.filterChipsView.setDateFilter(item.title)
-                // UI only - no actual filtering
+                self.selectedDateRange = (start: Calendar.current.startOfDay(for: startDate), end: today)
+                self.applyFilters()
                 
                 self.activeDropdown?.dismiss()
                 self.activeDropdown = nil
@@ -562,11 +567,13 @@ final class SearchViewController: UIViewController {
             // Update chip - show nil for "Todos" to reset
             if item.title == "Todos" {
                 self.filterChipsView.setTypeFilter(nil)
+                self.selectedType = nil
             } else {
                 self.filterChipsView.setTypeFilter(item.title)
+                self.selectedType = item.title
             }
             
-            // UI only - no actual filtering
+            self.applyFilters()
             self.activeDropdown?.dismiss()
             self.activeDropdown = nil
             self.activeFilterType = nil
@@ -608,7 +615,8 @@ final class SearchViewController: UIViewController {
                 self.presentAmountRangePicker()
             } else if item.title == "Todos" {
                 self.filterChipsView.setAmountFilter(nil)
-                // UI only - no actual filtering
+                self.selectedAmountRange = nil
+                self.applyFilters()
                 self.activeDropdown?.dismiss()
                 self.activeDropdown = nil
                 self.activeFilterType = nil
@@ -1019,7 +1027,8 @@ extension SearchViewController: DateRangePickerDelegate {
         
         let dateText = "\(formatter.string(from: startDate)) - \(formatter.string(from: endDate))"
         filterChipsView.setDateFilter(dateText)
-        // UI only - no actual filtering
+        selectedDateRange = (start: Calendar.current.startOfDay(for: startDate), end: endDate)
+        applyFilters()
     }
     
     func dateRangePickerDidCancel(_ picker: DateRangePickerViewController) {
@@ -1053,7 +1062,16 @@ extension SearchViewController: AmountRangePickerDelegate {
         if !amountText.isEmpty {
             filterChipsView.setAmountFilter(amountText)
         }
-        // UI only - no actual filtering
+        
+        if minAmount == nil && maxAmount == nil {
+            selectedAmountRange = nil
+        } else {
+            selectedAmountRange = (
+                min: minAmount ?? 0,
+                max: maxAmount ?? Double.greatestFiniteMagnitude
+            )
+        }
+        applyFilters()
     }
     
     func amountRangePickerDidCancel(_ picker: AmountRangePickerViewController) {
@@ -1065,21 +1083,30 @@ extension SearchViewController: AmountRangePickerDelegate {
 
 extension SearchViewController: AllFiltersDelegate {
     func allFiltersDidApply(_ filters: AllFiltersViewController.FilterState) {
-        // Update UI only - no actual filtering
+        // Update UI + apply real filters
         let formatter = DateFormatter()
         formatter.dateFormat = "dd/MM/yy"
         let dateText = "\(formatter.string(from: filters.startDate)) - \(formatter.string(from: filters.endDate))"
         filterChipsView.setDateFilter(dateText)
+        selectedDateRange = (start: Calendar.current.startOfDay(for: filters.startDate), end: filters.endDate)
         
         // Update type chip
         if filters.transactionType != "Todos" {
             filterChipsView.setTypeFilter(filters.transactionType)
+            selectedType = filters.transactionType
+        } else {
+            selectedType = nil
         }
         
         // Update amount chip
         if let min = filters.minAmount, let max = filters.maxAmount {
             filterChipsView.setAmountFilter(String(format: "$%.2f - $%.2f", min, max))
+            selectedAmountRange = (min: min, max: max)
+        } else {
+            selectedAmountRange = nil
         }
+        
+        applyFilters()
     }
     
     func allFiltersDidCancel() {
