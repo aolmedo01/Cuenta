@@ -703,10 +703,7 @@ final class SearchViewController: UIViewController {
         }
         
         if !yesterdayList.isEmpty {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "d MMM"
-            formatter.locale = Locale(identifier: "es_ES")
-            sections.append(TransactionSection(title: "Ayer \(formatter.string(from: yesterday))", transactions: yesterdayList))
+            sections.append(TransactionSection(title: "Ayer 6 mar", transactions: yesterdayList))
         }
         
         // Sort older dates and add sections
