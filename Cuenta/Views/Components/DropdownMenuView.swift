@@ -302,6 +302,10 @@ final class DropdownMenuView: UIView {
     }
     
     func dismiss() {
+        dismiss(completion: nil)
+    }
+    
+    func dismiss(completion: (() -> Void)?) {
         UIView.animate(withDuration: 0.2, delay: 0, options: .curveEaseIn) {
             self.alpha = 0
             self.transform = CGAffineTransform(scaleX: 0.95, y: 0.95).translatedBy(x: 0, y: -10)
@@ -309,6 +313,7 @@ final class DropdownMenuView: UIView {
             self.backgroundOverlay.removeFromSuperview()
             self.removeFromSuperview()
             self.onDismiss?()
+            completion?()
         }
     }
 }

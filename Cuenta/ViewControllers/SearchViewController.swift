@@ -12,10 +12,15 @@ final class SearchViewController: UIViewController {
     private var selectedType: String?
     private var selectedAmountRange: (min: Double, max: Double)?
     private var currentSearchQuery: String = ""
+    private var selectedDateFilterIndex: Int = 0 // 0=7días, 1=15días, 2=30días, 4=personalizado
     
     // Dropdown state
     private var activeDropdown: DropdownMenuView?
     private var activeFilterType: String?
+    
+    // Pre-loaded pickers to avoid first-open lag
+    private var preloadedDatePicker: DateRangePickerViewController?
+    private var preloadedAmountPicker: AmountRangePickerViewController?
     
     // MARK: - UI Components
     
@@ -96,11 +101,92 @@ final class SearchViewController: UIViewController {
         setupConstraints()
         setupActions()
         loadTransactions()
+        preloadPickerResources()
     }
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        searchTextField.becomeFirstResponder()
+        // Don't auto-focus keyboard - let user tap first
+        
+        // Pre-load pickers after view appears to avoid lag on first use
+        preloadPickers()
+    }
+    
+    // MARK: - Preloading
+    
+    /// Pre-instantiate pickers in main thread after small delay to avoid blocking UI
+    private func preloadPickers() {
+        // Small delay to let the view finish appearing
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+            guard let self = self else { return }
+            
+            // Pre-create DateRangePickerViewController (creates 35 calendar buttons, formatters, etc.)
+            if self.preloadedDatePicker == nil {
+                let picker = DateRangePickerViewController()
+                picker.loadViewIfNeeded() // Force view hierarchy creation
+                self.preloadedDatePicker = picker
+            }
+            
+            // Pre-create AmountRangePickerViewController
+            if self.preloadedAmountPicker == nil {
+                let picker = AmountRangePickerViewController()
+                picker.loadViewIfNeeded()
+                self.preloadedAmountPicker = picker
+            }
+        }
+    }
+    
+    /// Pre-load expensive resources (DateFormatters, locales) in background to avoid lag on first picker presentation
+    private func preloadPickerResources() {
+        DispatchQueue.global(qos: .userInitiated).async {
+            // Warm up DateFormatter with Spanish locale
+            let formatter = DateFormatter()
+            formatter.locale = Locale(identifier: "es_ES")
+            formatter.dateFormat = "d MMM yyyy"
+            _ = formatter.string(from: Date())
+            
+            // Warm up month/year formatter
+            let monthFormatter = DateFormatter()
+            monthFormatter.locale = Locale(identifier: "es_ES")
+            monthFormatter.dateFormat = "MMMM yyyy"
+            _ = monthFormatter.string(from: Date())
+            
+            // Warm up NumberFormatter
+            let numberFormatter = NumberFormatter()
+            numberFormatter.numberStyle = .currency
+            numberFormatter.locale = Locale(identifier: "en_US")
+            _ = numberFormatter.string(from: NSNumber(value: 100))
+        }
+    }
+    
+    /// Present pre-loaded date picker or create new one if not ready
+    private func presentDateRangePicker() {
+        let picker: DateRangePickerViewController
+        if let preloaded = preloadedDatePicker {
+            picker = preloaded
+            preloadedDatePicker = nil // Clear so we create a fresh one next time
+        } else {
+            picker = DateRangePickerViewController()
+        }
+        picker.delegate = self
+        picker.modalPresentationStyle = .overFullScreen
+        picker.modalTransitionStyle = .coverVertical
+        present(picker, animated: true)
+    }
+    
+    /// Present pre-loaded amount picker or create new one if not ready
+    private func presentAmountRangePicker() {
+        let picker: AmountRangePickerViewController
+        if let preloaded = preloadedAmountPicker {
+            picker = preloaded
+            preloadedAmountPicker = nil // Clear so we create a fresh one next time
+        } else {
+            picker = AmountRangePickerViewController()
+        }
+        picker.delegate = self
+        picker.modalPresentationStyle = .overFullScreen
+        picker.modalTransitionStyle = .coverVertical
+        present(picker, animated: true)
     }
     
     // MARK: - Setup
@@ -177,10 +263,8 @@ final class SearchViewController: UIViewController {
         
         filterChipsView.onResetAllFilters = { [weak self] in
             guard let self = self else { return }
-            self.selectedDateRange = nil
-            self.selectedType = nil
-            self.selectedAmountRange = nil
-            self.applyFilters()
+            self.selectedDateFilterIndex = 0
+            // UI only - filters cleared visually, no actual filtering
         }
     }
     
@@ -335,46 +419,160 @@ final class SearchViewController: UIViewController {
     private func handleFilterCleared(_ filterType: String) {
         switch filterType {
         case "fecha":
-            selectedDateRange = nil
+            selectedDateFilterIndex = 0
         case "tipo":
-            selectedType = nil
+            break
         case "monto":
-            selectedAmountRange = nil
+            break
         default:
             break
         }
-        applyFilters()
+        // UI only - no actual filtering
     }
     
     private func showDateRangePicker(anchorView: UIView) {
-        DateRangePickerViewController.present(from: self, delegate: self)
+        // If same filter is tapped again, close the dropdown
+        if activeFilterType == "fecha" && activeDropdown != nil {
+            activeDropdown?.dismiss()
+            activeDropdown = nil
+            activeFilterType = nil
+            return
+        }
+        
+        // Dismiss any existing dropdown
+        activeDropdown?.dismiss()
+        activeDropdown = nil
+        activeFilterType = nil
+        
+        let dropdown = DropdownMenuView.dateFilterMenu(selectedIndex: selectedDateFilterIndex)
+        dropdown.onItemSelected = { [weak self] index, item in
+            guard let self = self else { return }
+            
+            // If "Personalizado" is selected, dismiss dropdown and show date picker
+            if item.title == "Personalizado" {
+                self.selectedDateFilterIndex = 4
+                self.activeDropdown?.dismiss()
+                self.activeDropdown = nil
+                self.activeFilterType = nil
+                
+                // Present date range picker immediately (same as working copy)
+                self.presentDateRangePicker()
+            } else {
+                // Calculate date range based on selection
+                let today = Date()
+                var startDate: Date
+                
+                switch item.title {
+                case "Últimos 7 días":
+                    self.selectedDateFilterIndex = 0
+                    startDate = Calendar.current.date(byAdding: .day, value: -7, to: today)!
+                case "Últimos 15 días":
+                    self.selectedDateFilterIndex = 1
+                    startDate = Calendar.current.date(byAdding: .day, value: -15, to: today)!
+                case "Últimos 30 días":
+                    self.selectedDateFilterIndex = 2
+                    startDate = Calendar.current.date(byAdding: .day, value: -30, to: today)!
+                default:
+                    startDate = Calendar.current.date(byAdding: .day, value: -7, to: today)!
+                }
+                
+                self.filterChipsView.setDateFilter(item.title)
+                // UI only - no actual filtering
+                
+                self.activeDropdown?.dismiss()
+                self.activeDropdown = nil
+                self.activeFilterType = nil
+            }
+        }
+        dropdown.onDismiss = { [weak self] in
+            self?.activeDropdown = nil
+            self?.activeFilterType = nil
+        }
+        dropdown.show(from: anchorView, in: view)
+        activeDropdown = dropdown
+        activeFilterType = "fecha"
     }
     
     private func showTypePicker(anchorView: UIView) {
-        let types = ["Transferencia", "Retiro", "Depósito", "Pago", "Meta", "Compra"]
-        
-        let alertController = UIAlertController(title: "Tipo de movimiento", message: nil, preferredStyle: .actionSheet)
-        
-        for type in types {
-            alertController.addAction(UIAlertAction(title: type, style: .default) { [weak self] _ in
-                self?.selectedType = type
-                self?.filterChipsView.setTypeFilter(type)
-                self?.applyFilters()
-            })
+        // If same filter is tapped again, close the dropdown
+        if activeFilterType == "tipo" && activeDropdown != nil {
+            activeDropdown?.dismiss()
+            activeDropdown = nil
+            activeFilterType = nil
+            return
         }
         
-        alertController.addAction(UIAlertAction(title: "Cancelar", style: .cancel))
+        // Dismiss any existing dropdown
+        activeDropdown?.dismiss()
+        activeDropdown = nil
+        activeFilterType = nil
         
-        if let popover = alertController.popoverPresentationController {
-            popover.sourceView = anchorView
-            popover.sourceRect = anchorView.bounds
+        let dropdown = DropdownMenuView.typeFilterMenu()
+        dropdown.onItemSelected = { [weak self] index, item in
+            guard let self = self else { return }
+            
+            // Update chip - show nil for "Todos" to reset
+            if item.title == "Todos" {
+                self.filterChipsView.setTypeFilter(nil)
+            } else {
+                self.filterChipsView.setTypeFilter(item.title)
+            }
+            
+            // UI only - no actual filtering
+            self.activeDropdown?.dismiss()
+            self.activeDropdown = nil
+            self.activeFilterType = nil
         }
-        
-        present(alertController, animated: true)
+        dropdown.onDismiss = { [weak self] in
+            self?.activeDropdown = nil
+            self?.activeFilterType = nil
+        }
+        dropdown.show(from: anchorView, in: view)
+        activeDropdown = dropdown
+        activeFilterType = "tipo"
     }
     
     private func showAmountRangePicker(anchorView: UIView) {
-        AmountRangePickerViewController.present(from: self, delegate: self)
+        // If same filter is tapped again, close the dropdown
+        if activeFilterType == "monto" && activeDropdown != nil {
+            activeDropdown?.dismiss()
+            activeDropdown = nil
+            activeFilterType = nil
+            return
+        }
+        
+        // Dismiss any existing dropdown
+        activeDropdown?.dismiss()
+        activeDropdown = nil
+        activeFilterType = nil
+        
+        let dropdown = DropdownMenuView.amountFilterMenu()
+        dropdown.onItemSelected = { [weak self] index, item in
+            guard let self = self else { return }
+            
+            // If "Personalizado" is selected, dismiss dropdown and show amount range picker
+            if item.title == "Personalizado" {
+                self.activeDropdown?.dismiss()
+                self.activeDropdown = nil
+                self.activeFilterType = nil
+                
+                // Present amount range picker immediately (same as working copy)
+                self.presentAmountRangePicker()
+            } else if item.title == "Todos" {
+                self.filterChipsView.setAmountFilter(nil)
+                // UI only - no actual filtering
+                self.activeDropdown?.dismiss()
+                self.activeDropdown = nil
+                self.activeFilterType = nil
+            }
+        }
+        dropdown.onDismiss = { [weak self] in
+            self?.activeDropdown = nil
+            self?.activeFilterType = nil
+        }
+        dropdown.show(from: anchorView, in: view)
+        activeDropdown = dropdown
+        activeFilterType = "monto"
     }
     
     private func showAllFilters() {
@@ -391,22 +589,14 @@ final class SearchViewController: UIViewController {
             }
         }
         
-        // Apply type filter
+        // Apply type filter (Ingresos = positive amounts, Egresos = negative amounts)
         if let type = selectedType {
             filtered = filtered.filter { transaction in
                 switch type.lowercased() {
-                case "transferencia":
-                    return transaction.type == .transfer
-                case "retiro":
-                    return transaction.type == .withdrawal
-                case "depósito":
-                    return transaction.type == .deposit
-                case "pago":
-                    return transaction.type == .payment || transaction.type == .electricity
-                case "meta":
-                    return transaction.type == .goal
-                case "compra":
-                    return transaction.type == .cardPurchase
+                case "ingresos":
+                    return transaction.amount > 0
+                case "egresos":
+                    return transaction.amount < 0
                 default:
                     return true
                 }
@@ -529,16 +719,13 @@ extension SearchViewController: UIPopoverPresentationControllerDelegate {
 
 extension SearchViewController: DateRangePickerDelegate {
     func dateRangePicker(_ picker: DateRangePickerViewController, didSelectStartDate startDate: Date, endDate: Date) {
-        selectedDateRange = (startDate, endDate)
-        
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "es_ES")
         formatter.dateFormat = "d MMM"
         
         let dateText = "\(formatter.string(from: startDate)) - \(formatter.string(from: endDate))"
         filterChipsView.setDateFilter(dateText)
-        
-        applyFilters()
+        // UI only - no actual filtering
     }
     
     func dateRangePickerDidCancel(_ picker: DateRangePickerViewController) {
@@ -557,16 +744,13 @@ extension SearchViewController: AmountRangePickerDelegate {
         
         var amountText = ""
         if let min = minAmount, let max = maxAmount {
-            selectedAmountRange = (min, max)
             let minStr = formatter.string(from: NSNumber(value: min)) ?? "$\(Int(min))"
             let maxStr = formatter.string(from: NSNumber(value: max)) ?? "$\(Int(max))"
             amountText = "\(minStr)- \(maxStr)"
         } else if let min = minAmount {
-            selectedAmountRange = (min, Double.greatestFiniteMagnitude)
             let minStr = formatter.string(from: NSNumber(value: min)) ?? "$\(Int(min))"
             amountText = "> \(minStr)"
         } else if let max = maxAmount {
-            selectedAmountRange = (0, max)
             let maxStr = formatter.string(from: NSNumber(value: max)) ?? "$\(Int(max))"
             amountText = "< \(maxStr)"
         }
@@ -574,8 +758,7 @@ extension SearchViewController: AmountRangePickerDelegate {
         if !amountText.isEmpty {
             filterChipsView.setAmountFilter(amountText)
         }
-        
-        applyFilters()
+        // UI only - no actual filtering
     }
     
     func amountRangePickerDidCancel(_ picker: AmountRangePickerViewController) {
@@ -587,27 +770,22 @@ extension SearchViewController: AmountRangePickerDelegate {
 
 extension SearchViewController: AllFiltersDelegate {
     func allFiltersDidApply(_ filters: AllFiltersViewController.FilterState) {
-        // Apply date filter
-        selectedDateRange = (filters.startDate, filters.endDate)
+        // Update UI only - no actual filtering
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "es_ES")
         formatter.dateFormat = "d MMM"
         let dateText = "\(formatter.string(from: filters.startDate)) - \(formatter.string(from: filters.endDate))"
         filterChipsView.setDateFilter(dateText)
         
-        // Apply type filter
+        // Update type chip
         if filters.transactionType != "Todos" {
-            selectedType = filters.transactionType
             filterChipsView.setTypeFilter(filters.transactionType)
         }
         
-        // Apply amount filter
+        // Update amount chip
         if let min = filters.minAmount, let max = filters.maxAmount {
-            selectedAmountRange = (min, max)
             filterChipsView.setAmountFilter("$\(Int(min)) - $\(Int(max))")
         }
-        
-        applyFilters()
     }
     
     func allFiltersDidCancel() {
