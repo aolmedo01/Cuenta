@@ -22,7 +22,31 @@ final class SearchViewController: UIViewController {
     private var preloadedDatePicker: DateRangePickerViewController?
     private var preloadedAmountPicker: AmountRangePickerViewController?
     
+    // Scroll state for filter chips visibility
+    private var filtersVisible: Bool = true
+    private var filterChipsTopConstraint: NSLayoutConstraint?
+    private var scrollViewTopToFiltersConstraint: NSLayoutConstraint?
+    private var scrollViewTopToSearchConstraint: NSLayoutConstraint?
+    
     // MARK: - UI Components
+    
+    private lazy var exportButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.backgroundColor = .white
+        button.layer.cornerRadius = 28
+        button.layer.shadowColor = UIColor.black.cgColor
+        button.layer.shadowOpacity = 0.15
+        button.layer.shadowOffset = CGSize(width: 0, height: 4)
+        button.layer.shadowRadius = 12
+        button.setImage(UIImage(systemName: "square.and.arrow.up")?
+            .withConfiguration(UIImage.SymbolConfiguration(pointSize: 18, weight: .medium)), for: .normal)
+        button.tintColor = UIColor(red: 0, green: 0.478, blue: 1, alpha: 1) // Accent blue
+        button.alpha = 0
+        button.isHidden = true
+        button.addTarget(self, action: #selector(exportTapped), for: .touchUpInside)
+        return button
+    }()
     
     private let searchContainerView: UIView = {
         let view = UIView()
@@ -110,6 +134,9 @@ final class SearchViewController: UIViewController {
         
         // Pre-load pickers after view appears to avoid lag on first use
         preloadPickers()
+        
+        // Pre-generate CSV file for faster export
+        preloadExportFile()
     }
     
     // MARK: - Preloading
@@ -132,6 +159,27 @@ final class SearchViewController: UIViewController {
                 let picker = AmountRangePickerViewController()
                 picker.loadViewIfNeeded()
                 self.preloadedAmountPicker = picker
+            }
+        }
+    }
+    
+    /// Pre-generate CSV file so it's ready when user wants to export
+    private func preloadExportFile() {
+        DispatchQueue.global(qos: .background).async { [weak self] in
+            guard let self = self else { return }
+            
+            // Pre-create the CSV file
+            let fileName = self.generateExcelFileName()
+            let csvContent = self.generateCSVContent()
+            let tempDirectory = FileManager.default.temporaryDirectory
+            let fileURL = tempDirectory.appendingPathComponent(fileName)
+            
+            try? csvContent.write(to: fileURL, atomically: true, encoding: .utf8)
+            
+            // Pre-warm UIActivityViewController (loads share extensions in background)
+            DispatchQueue.main.async {
+                let dummyItem = "preload"
+                let _ = UIActivityViewController(activityItems: [dummyItem], applicationActivities: nil)
             }
         }
     }
@@ -201,18 +249,26 @@ final class SearchViewController: UIViewController {
         view.addSubview(filterChipsView)
         view.addSubview(scrollView)
         scrollView.addSubview(contentStackView)
+        view.addSubview(exportButton)
         
         searchTextField.delegate = self
+        scrollView.delegate = self
     }
     
     private func setupConstraints() {
+        // Create variable constraints for filter chips animation
+        filterChipsTopConstraint = filterChipsView.topAnchor.constraint(equalTo: searchContainerView.bottomAnchor, constant: 16)
+        scrollViewTopToFiltersConstraint = scrollView.topAnchor.constraint(equalTo: filterChipsView.bottomAnchor, constant: 8)
+        scrollViewTopToSearchConstraint = scrollView.topAnchor.constraint(equalTo: searchContainerView.bottomAnchor, constant: 8)
+        scrollViewTopToSearchConstraint?.isActive = false
+        
         NSLayoutConstraint.activate([
             // Search container
             searchContainerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
             searchContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             searchContainerView.trailingAnchor.constraint(equalTo: cancelButton.leadingAnchor, constant: -12),
             searchContainerView.heightAnchor.constraint(equalToConstant: 48),
-             
+             
             // Search icon
             searchIcon.leadingAnchor.constraint(equalTo: searchContainerView.leadingAnchor, constant: 16),
             searchIcon.centerYAnchor.constraint(equalTo: searchContainerView.centerYAnchor),
@@ -229,13 +285,13 @@ final class SearchViewController: UIViewController {
             cancelButton.centerYAnchor.constraint(equalTo: searchContainerView.centerYAnchor),
             
             // Filter chips
-            filterChipsView.topAnchor.constraint(equalTo: searchContainerView.bottomAnchor, constant: 16),
+            filterChipsTopConstraint!,
             filterChipsView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             filterChipsView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             filterChipsView.heightAnchor.constraint(equalToConstant: 50),
             
             // Scroll view
-            scrollView.topAnchor.constraint(equalTo: filterChipsView.bottomAnchor, constant: 8),
+            scrollViewTopToFiltersConstraint!,
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
@@ -245,7 +301,13 @@ final class SearchViewController: UIViewController {
             contentStackView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: 16),
             contentStackView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor, constant: -16),
             contentStackView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: -100),
-            contentStackView.widthAnchor.constraint(equalTo: scrollView.widthAnchor, constant: -32)
+            contentStackView.widthAnchor.constraint(equalTo: scrollView.widthAnchor, constant: -32),
+            
+            // Export button
+            exportButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
+            exportButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -24),
+            exportButton.widthAnchor.constraint(equalToConstant: 56),
+            exportButton.heightAnchor.constraint(equalToConstant: 56)
         ])
     }
     
@@ -271,67 +333,29 @@ final class SearchViewController: UIViewController {
     // MARK: - Data
     
     private func loadTransactions() {
-        // Sample transactions - in real app, these would come from a data source
+        // Same transactions as CuentaViewController
         let today = Date()
         let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: today)!
+        let twoDaysAgo = Calendar.current.date(byAdding: .day, value: -2, to: today)!
         
         allTransactions = [
-            Transaction(
-                id: UUID(),
-                name: "Daniel Rodriguez",
-                description: "Movimiento interno",
-                amount: 1600.00,
-                balance: 1640.00,
-                date: today,
-                type: .transfer
-            ),
-            Transaction(
-                id: UUID(),
-                name: "CNEL",
-                description: "Servicio de luz",
-                amount: -120.21,
-                balance: 1200.00,
-                date: today,
-                type: .electricity,
-                status: .completed,
-                recipientName: nil,
-                recipientPhone: nil,
-                timeRemaining: nil,
-                progressRemaining: nil,
-                contractNumber: "123456789",
-                meterNumber: "987654321",
-                serviceAmount: 120.00,
-                commission: 0.18,
-                tax: 0.03
-            ),
-            Transaction(
-                id: UUID(),
-                name: "Fernanda Ortiz Viveka",
-                description: "Mercado frutas",
-                amount: -60.00,
-                balance: 200.00,
-                date: today,
-                type: .transfer
-            ),
-            Transaction(
-                id: UUID(),
-                name: "Uber rides",
-                description: "",
-                amount: 60.00,
-                balance: 200.00,
-                date: yesterday,
-                type: .deposit,
-                status: .pending
-            ),
-            Transaction(
-                id: UUID(),
-                name: "Transferencia a tu meta",
-                description: "Vacaciones Argentina",
-                amount: -10.00,
-                balance: 250.00,
-                date: yesterday,
-                type: .goal
-            )
+            // Hoy
+            Transaction(id: UUID(), name: "Jessica Alfonso", description: "Movimiento interno", amount: 1600.00, balance: 1640.00, date: today, type: .transfer),
+            Transaction(id: UUID(), name: "CNEL", description: "Pago de servicio luz", amount: -120.21, balance: 80.00, date: today, type: .electricity, serviceAmount: 120.00, commission: 0.18, tax: 0.03),
+            Transaction(id: UUID(), name: "Carla Lecaro", description: "Mercado frutas", amount: -60.00, balance: 200.00, date: today, type: .payment),
+            
+            // Ayer
+            Transaction(id: UUID(), name: "Isabela Jacome", description: "Alquiler", amount: 60.00, balance: 260.00, date: yesterday, type: .deposit),
+            Transaction(id: UUID(), name: "Transferencia a tu meta", description: "Vacaciones Argentina", amount: -10.00, balance: 250.00, date: yesterday, type: .goal),
+            Transaction(id: UUID(), name: "Retiro en ventanilla", description: "Agencia Mall del Sol", amount: -50.00, balance: 260.00, date: yesterday, type: .withdrawal),
+            Transaction(id: UUID(), name: "Emapad", description: "Pago de servicio agua", amount: -10.00, balance: 310.00, date: yesterday, type: .payment),
+            Transaction(id: UUID(), name: "Guerrero Keyla", description: "Salida sushi", amount: 60.00, balance: 320.00, date: yesterday, type: .deposit),
+            Transaction(id: UUID(), name: "Retiro de tu meta", description: "Carrito 2026", amount: 100.00, balance: 260.00, date: yesterday, type: .goal),
+            
+            // Hace 2 días
+            Transaction(id: UUID(), name: "Chocolateria San Ferna", description: "Compra con tarjeta", amount: -80.00, balance: 160.00, date: twoDaysAgo, type: .cardPurchase),
+            Transaction(id: UUID(), name: "Transferencia a tu meta", description: "Vacaciones Argentina", amount: -220.00, balance: 240.00, date: twoDaysAgo, type: .goal),
+            Transaction(id: UUID(), name: "Sueldo acreditado", description: "Transferencia recibida", amount: 460.00, balance: 480.00, date: twoDaysAgo, type: .salary)
         ]
         
         // Initial display with all transactions
@@ -683,6 +707,256 @@ final class SearchViewController: UIViewController {
         searchTextField.resignFirstResponder()
         dismiss(animated: true)
     }
+    
+    @objc private func exportTapped() {
+        // Haptic feedback
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
+        
+        // Dismiss any existing dropdown
+        activeDropdown?.dismiss()
+        activeDropdown = nil
+        
+        // Show export options dropdown
+        let dropdown = DropdownMenuView.exportMenu()
+        dropdown.onItemSelected = { [weak self] index, item in
+            guard let self = self else { return }
+            
+            self.activeDropdown?.dismiss()
+            self.activeDropdown = nil
+            
+            switch item.title {
+            case "Compartir PDF":
+                self.showSharePDFModal()
+            case "Compartir Excel":
+                self.shareExcel()
+            default:
+                break
+            }
+        }
+        dropdown.onDismiss = { [weak self] in
+            self?.activeDropdown = nil
+        }
+        dropdown.show(from: exportButton, in: view, alignment: .trailing, direction: .up)
+        activeDropdown = dropdown
+    }
+    
+    // MARK: - Export Helpers
+    
+    private func showSharePDFModal() {
+        // Hide export button
+        hideExportButtonForExport()
+        
+        // Small delay to ensure dropdown is fully dismissed
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+            guard let self = self else { return }
+            
+            let sharePDFVC = SharePDFViewController()
+            sharePDFVC.modalPresentationStyle = .overFullScreen
+            sharePDFVC.modalTransitionStyle = .crossDissolve
+            
+            // Configure with current date range from filter
+            sharePDFVC.dateRange = self.getCurrentDateRangeString()
+            sharePDFVC.userEmail = "dan_rdgz@hotmail.com" // In real app, get from user profile
+            
+            sharePDFVC.onSendEmail = { [weak self] email in
+                // Generate PDF and send via email
+                self?.generateAndSendPDF(to: email)
+                self?.showExportButtonAfterExport()
+            }
+            
+            sharePDFVC.onUpdateData = { [weak self] in
+                // Navigate to update user data
+                print("Navigate to update data screen")
+                self?.showExportButtonAfterExport()
+            }
+            
+            // Handle dismiss without action
+            sharePDFVC.onDismissWithoutAction = { [weak self] in
+                self?.showExportButtonAfterExport()
+            }
+            
+            self.present(sharePDFVC, animated: false)
+        }
+    }
+    
+    private func shareExcel() {
+        // Hide export button immediately
+        hideExportButtonForExport()
+        
+        // Small delay to ensure dropdown is fully dismissed
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
+            guard let self = self else { return }
+            
+            // Use pre-generated file or create new one
+            let fileName = self.generateExcelFileName()
+            let tempDirectory = FileManager.default.temporaryDirectory
+            let fileURL = tempDirectory.appendingPathComponent(fileName)
+            
+            // Ensure file exists (regenerate if needed)
+            if !FileManager.default.fileExists(atPath: fileURL.path) {
+                let csvContent = self.generateCSVContent()
+                try? csvContent.write(to: fileURL, atomically: true, encoding: .utf8)
+            }
+            
+            // Show share sheet
+            let activityVC = UIActivityViewController(
+                activityItems: [fileURL],
+                applicationActivities: nil
+            )
+            
+            // Exclude some activity types to speed up loading
+            activityVC.excludedActivityTypes = [
+                .addToReadingList,
+                .assignToContact,
+                .openInIBooks
+            ]
+            
+            // For iPad - position at bottom of screen
+            if let popover = activityVC.popoverPresentationController {
+                popover.sourceView = self.view
+                popover.sourceRect = CGRect(x: self.view.bounds.midX, y: self.view.bounds.maxY, width: 0, height: 0)
+                popover.permittedArrowDirections = []
+            }
+            
+            // Restore export button when share sheet is dismissed
+            activityVC.completionWithItemsHandler = { [weak self] _, _, _, _ in
+                self?.showExportButtonAfterExport()
+            }
+            
+            self.present(activityVC, animated: true)
+        }
+    }
+    
+    private func hideExportButtonForExport() {
+        UIView.animate(withDuration: 0.2) {
+            self.exportButton.alpha = 0
+        } completion: { _ in
+            self.exportButton.isHidden = true
+        }
+    }
+    
+    private func showExportButtonAfterExport() {
+        let offsetY = scrollView.contentOffset.y
+        let hasScrolledDown = offsetY > 10
+        
+        if hasScrolledDown {
+            exportButton.isHidden = false
+            UIView.animate(withDuration: 0.25) {
+                self.exportButton.alpha = 1
+            }
+        }
+    }
+    
+    private func getCurrentDateRangeString() -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "es_MX")
+        formatter.dateFormat = "MMMM yyyy"
+        
+        let calendar = Calendar.current
+        let now = Date()
+        let oneMonthAgo = calendar.date(byAdding: .month, value: -1, to: now) ?? now
+        
+        let startMonth = formatter.string(from: oneMonthAgo).capitalized
+        let endMonth = formatter.string(from: now).capitalized
+        
+        return "\(startMonth) - \(endMonth)"
+    }
+    
+    private func generateExcelFileName() -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd_MM_yyyy"
+        let dateString = formatter.string(from: Date())
+        return "Estado de cuenta-\(dateString).csv"
+    }
+    
+    private func generateCSVContent() -> String {
+        var csv = "Fecha,Descripción,Monto,Saldo\n"
+        
+        for section in filteredTransactions {
+            for transaction in section.transactions {
+                let dateFormatter = DateFormatter()
+                dateFormatter.dateFormat = "dd/MM/yyyy"
+                let dateStr = dateFormatter.string(from: transaction.date)
+                
+                let description = transaction.description.replacingOccurrences(of: ",", with: ";")
+                let amount = String(format: "%.2f", transaction.amount)
+                let balance = String(format: "%.2f", transaction.balance)
+                
+                csv += "\(dateStr),\(description),\(amount),\(balance)\n"
+            }
+        }
+        
+        return csv
+    }
+    
+    private func generateAndSendPDF(to email: String) {
+        // In a real app, this would generate a PDF and send it via backend API
+        print("Generating PDF and sending to: \(email)")
+        
+        // Show success feedback
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.success)
+    }
+    
+    // MARK: - Scroll Handling
+    
+    private func updateFilterChipsVisibility(show: Bool) {
+        guard filtersVisible != show else { return }
+        filtersVisible = show
+        
+        UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseInOut) {
+            if show {
+                // Show filters
+                self.filterChipsView.alpha = 1
+                self.filterChipsView.isHidden = false
+                self.scrollViewTopToFiltersConstraint?.isActive = true
+                self.scrollViewTopToSearchConstraint?.isActive = false
+            } else {
+                // Hide filters
+                self.filterChipsView.alpha = 0
+                self.scrollViewTopToFiltersConstraint?.isActive = false
+                self.scrollViewTopToSearchConstraint?.isActive = true
+            }
+            self.view.layoutIfNeeded()
+        } completion: { _ in
+            if !show {
+                self.filterChipsView.isHidden = true
+            }
+        }
+    }
+    
+    private func updateExportButtonVisibility(show: Bool) {
+        UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseInOut) {
+            if show {
+                self.exportButton.isHidden = false
+                self.exportButton.alpha = 1
+                self.exportButton.transform = .identity
+            } else {
+                self.exportButton.alpha = 0
+                self.exportButton.transform = CGAffineTransform(scaleX: 0.8, y: 0.8)
+            }
+        } completion: { _ in
+            if !show {
+                self.exportButton.isHidden = true
+            }
+        }
+    }
+}
+
+// MARK: - UIScrollViewDelegate
+
+extension SearchViewController: UIScrollViewDelegate {
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        let offsetY = scrollView.contentOffset.y
+        
+        // Show/hide filter chips based on scroll position
+        let hasScrolledDown = offsetY > 10
+        updateFilterChipsVisibility(show: !hasScrolledDown)
+        
+        // Show export button when scrolling down
+        updateExportButtonVisibility(show: hasScrolledDown)
+    }
 }
 
 // MARK: - UITextFieldDelegate
@@ -720,8 +994,7 @@ extension SearchViewController: UIPopoverPresentationControllerDelegate {
 extension SearchViewController: DateRangePickerDelegate {
     func dateRangePicker(_ picker: DateRangePickerViewController, didSelectStartDate startDate: Date, endDate: Date) {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "es_ES")
-        formatter.dateFormat = "d MMM"
+        formatter.dateFormat = "dd/MM/yy"
         
         let dateText = "\(formatter.string(from: startDate)) - \(formatter.string(from: endDate))"
         filterChipsView.setDateFilter(dateText)
@@ -740,18 +1013,19 @@ extension SearchViewController: AmountRangePickerDelegate {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
         formatter.locale = Locale(identifier: "en_US")
-        formatter.maximumFractionDigits = 0
+        formatter.minimumFractionDigits = 2
+        formatter.maximumFractionDigits = 2
         
         var amountText = ""
         if let min = minAmount, let max = maxAmount {
-            let minStr = formatter.string(from: NSNumber(value: min)) ?? "$\(Int(min))"
-            let maxStr = formatter.string(from: NSNumber(value: max)) ?? "$\(Int(max))"
+            let minStr = formatter.string(from: NSNumber(value: min)) ?? "$\(min)"
+            let maxStr = formatter.string(from: NSNumber(value: max)) ?? "$\(max)"
             amountText = "\(minStr)- \(maxStr)"
         } else if let min = minAmount {
-            let minStr = formatter.string(from: NSNumber(value: min)) ?? "$\(Int(min))"
+            let minStr = formatter.string(from: NSNumber(value: min)) ?? "$\(min)"
             amountText = "> \(minStr)"
         } else if let max = maxAmount {
-            let maxStr = formatter.string(from: NSNumber(value: max)) ?? "$\(Int(max))"
+            let maxStr = formatter.string(from: NSNumber(value: max)) ?? "$\(max)"
             amountText = "< \(maxStr)"
         }
         
@@ -772,8 +1046,7 @@ extension SearchViewController: AllFiltersDelegate {
     func allFiltersDidApply(_ filters: AllFiltersViewController.FilterState) {
         // Update UI only - no actual filtering
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "es_ES")
-        formatter.dateFormat = "d MMM"
+        formatter.dateFormat = "dd/MM/yy"
         let dateText = "\(formatter.string(from: filters.startDate)) - \(formatter.string(from: filters.endDate))"
         filterChipsView.setDateFilter(dateText)
         
@@ -784,7 +1057,7 @@ extension SearchViewController: AllFiltersDelegate {
         
         // Update amount chip
         if let min = filters.minAmount, let max = filters.maxAmount {
-            filterChipsView.setAmountFilter("$\(Int(min)) - $\(Int(max))")
+            filterChipsView.setAmountFilter(String(format: "$%.2f - $%.2f", min, max))
         }
     }
     

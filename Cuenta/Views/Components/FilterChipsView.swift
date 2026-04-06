@@ -63,7 +63,8 @@ final class FilterChipButton: UIButton {
     func setFilterValue(_ value: String?) {
         if let value = value, !value.isEmpty {
             isFilterSelected = true
-            setTitle("\(baseTitle): \(value)", for: .normal)
+            // Show only the value when filter is selected (not "baseTitle: value")
+            setTitle(value, for: .normal)
             
             // Keep same style as unselected - background: #FCFCFD, border: #A9B0BF, text: #515A73
             backgroundColor = UIColor(red: 0.988, green: 0.988, blue: 0.992, alpha: 1)
