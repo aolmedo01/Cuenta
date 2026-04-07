@@ -1,6 +1,19 @@
 import Foundation
 import UIKit
 
+private extension NumberFormatter {
+    static func usCurrencyFormatter() -> NumberFormatter {
+        let formatter = NumberFormatter()
+        formatter.locale = Locale(identifier: "en_US")
+        formatter.numberStyle = .currency
+        formatter.currencyCode = "USD"
+        formatter.currencySymbol = "$"
+        formatter.maximumFractionDigits = 2
+        formatter.minimumFractionDigits = 2
+        return formatter
+    }
+}
+
 // MARK: - Transaction Type
 enum TransactionType: String {
     case transfer = "transfer"
@@ -51,21 +64,13 @@ struct Transaction {
     }
     
     var formattedAmount: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencySymbol = "$"
-        formatter.maximumFractionDigits = 2
-        formatter.minimumFractionDigits = 2
+        let formatter = NumberFormatter.usCurrencyFormatter()
         let prefix = amount >= 0 ? "+" : "-"
         return prefix + (formatter.string(from: NSNumber(value: abs(amount))) ?? "$0.00")
     }
     
     var formattedBalance: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencySymbol = "$"
-        formatter.maximumFractionDigits = 2
-        formatter.minimumFractionDigits = 2
+        let formatter = NumberFormatter.usCurrencyFormatter()
         return formatter.string(from: NSNumber(value: abs(balance))) ?? "$0.00"
     }
 }
@@ -94,12 +99,8 @@ struct Account {
     var balance: Double
     
     var formattedBalance: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.groupingSeparator = ","
-        formatter.maximumFractionDigits = 2
-        formatter.minimumFractionDigits = 2
-        return "$" + (formatter.string(from: NSNumber(value: balance)) ?? "0.00")
+        let formatter = NumberFormatter.usCurrencyFormatter()
+        return formatter.string(from: NSNumber(value: balance)) ?? "$0.00"
     }
     
     var formattedAccountNumber: String {
