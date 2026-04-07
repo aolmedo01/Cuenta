@@ -308,7 +308,7 @@ final class TransactionCell: UIView {
         button.titleLabel?.font = .manrope(size: 17, weight: .regular)
         button.setTitleColor(.white, for: .normal)
         button.backgroundColor = UIColor(red: 0.086, green: 0.059, blue: 0.255, alpha: 1) // #160F41
-        button.layer.cornerRadius = 17
+        button.layer.cornerRadius = 21
         return button
     }()
     
@@ -469,7 +469,7 @@ final class TransactionCell: UIView {
             compartirButton.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
             compartirButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
             compartirButton.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -16),
-            compartirButton.heightAnchor.constraint(equalToConstant: 34),
+            compartirButton.heightAnchor.constraint(equalToConstant: 42),
             
             // Height
             heightConstraint!
@@ -521,10 +521,29 @@ final class TransactionCell: UIView {
         // Different heights for withdrawal vs standard transactions
         let withdrawalExpandedHeight: CGFloat = 301
         let standardExpandedHeight: CGFloat = expandedHeight
-        let targetExpandedHeight = isWithdrawalPending ? withdrawalExpandedHeight : standardExpandedHeight
+        let electricityExpandedHeight: CGFloat = 320
+        let targetExpandedHeight: CGFloat
+        if isWithdrawalPending {
+            targetExpandedHeight = withdrawalExpandedHeight
+        } else if isElectricityType {
+            targetExpandedHeight = electricityExpandedHeight
+        } else {
+            targetExpandedHeight = standardExpandedHeight
+        }
         
         let newHeight = isExpanded ? targetExpandedHeight : collapsedHeight
-        let detailHeight: CGFloat = isExpanded ? (isWithdrawalPending ? 160 : 140) : 0
+        let detailHeight: CGFloat
+        if isExpanded {
+            if isWithdrawalPending {
+                detailHeight = 160
+            } else if isElectricityType {
+                detailHeight = 156
+            } else {
+                detailHeight = 140
+            }
+        } else {
+            detailHeight = 0
+        }
         
         if animated {
             if isExpanded {
