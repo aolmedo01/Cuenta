@@ -73,7 +73,7 @@ final class SearchViewController: UIViewController {
             string: "Buscar nombre o com...",
             attributes: [.foregroundColor: UIColor(red: 0.851, green: 0.851, blue: 0.851, alpha: 1.0)] // #D9D9D9
         )
-        textField.font = UIFont.systemFont(ofSize: 17, weight: .medium)
+        textField.font = UIFont.manrope(size: 17, weight: .medium)
         textField.textColor = UIColor(red: 0.129, green: 0.106, blue: 0.224, alpha: 1.0)
         textField.borderStyle = .none
         textField.backgroundColor = .clear
@@ -86,7 +86,7 @@ final class SearchViewController: UIViewController {
         let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setTitle("Cancelar", for: .normal)
-        button.titleLabel?.font = UIFont.systemFont(ofSize: 17, weight: .regular)
+        button.titleLabel?.font = UIFont.manrope(size: 17, weight: .regular)
         button.setTitleColor(UIColor(red: 0.129, green: 0.106, blue: 0.224, alpha: 1.0), for: .normal)
         return button
     }()
@@ -348,7 +348,7 @@ final class SearchViewController: UIViewController {
                 name: "Retiro sin tarjeta",
                 description: "",
                 amount: -50.00,
-                balance: 0,
+                balance: 2899.00,
                 date: today,
                 type: .atmWithdrawal,
                 status: .toWithdraw,
@@ -357,9 +357,9 @@ final class SearchViewController: UIViewController {
                 timeRemaining: "23h 15m",
                 progressRemaining: 0.75
             ),
-            Transaction(id: UUID(), name: "Jessica Alfonso", description: "Movimiento interno", amount: 1600.00, balance: 1640.00, date: today, type: .transfer),
-            Transaction(id: UUID(), name: "CNEL", description: "Pago de servicio luz", amount: -120.21, balance: 80.00, date: today, type: .electricity, serviceAmount: 120.00, commission: 0.18, tax: 0.03),
-            Transaction(id: UUID(), name: "Carla Lecaro", description: "Mercado frutas", amount: -60.00, balance: 200.00, date: today, type: .payment),
+            Transaction(id: UUID(), name: "Jessica Alfonso", description: "Movimiento interno", amount: 1600.00, balance: 2949.00, date: today, type: .transfer),
+            Transaction(id: UUID(), name: "CNEL", description: "Pago de servicio luz", amount: -120.21, balance: 1349.00, date: today, type: .electricity, serviceAmount: 120.00, commission: 0.18, tax: 0.03),
+            Transaction(id: UUID(), name: "Carla Lecaro", description: "Mercado frutas", amount: -60.00, balance: 1469.21, date: today, type: .payment),
             
             // Ayer
             Transaction(
@@ -367,22 +367,22 @@ final class SearchViewController: UIViewController {
                 name: "Uber rides",
                 description: "",
                 amount: 60.00,
-                balance: 200.00,
+                balance: 1529.21,
                 date: yesterday,
                 type: .deposit,
                 status: .reversal
             ),
-            Transaction(id: UUID(), name: "Isabela Jacome", description: "Alquiler", amount: 60.00, balance: 260.00, date: yesterday, type: .deposit),
-            Transaction(id: UUID(), name: "Transferencia a tu meta", description: "Vacaciones Argentina", amount: -10.00, balance: 250.00, date: yesterday, type: .goal),
-            Transaction(id: UUID(), name: "Retiro en ventanilla", description: "Agencia Mall del Sol", amount: -50.00, balance: 260.00, date: yesterday, type: .withdrawal),
-            Transaction(id: UUID(), name: "Emapad", description: "Pago de servicio agua", amount: -10.00, balance: 310.00, date: yesterday, type: .payment),
-            Transaction(id: UUID(), name: "Guerrero Keyla", description: "Salida sushi", amount: 60.00, balance: 320.00, date: yesterday, type: .deposit),
-            Transaction(id: UUID(), name: "Retiro de tu meta", description: "Carrito 2026", amount: 100.00, balance: 260.00, date: yesterday, type: .goal),
+            Transaction(id: UUID(), name: "Isabela Jacome", description: "Alquiler", amount: 60.00, balance: 1469.21, date: yesterday, type: .deposit),
+            Transaction(id: UUID(), name: "Transferencia a tu meta", description: "Vacaciones Argentina", amount: -10.00, balance: 1409.21, date: yesterday, type: .goal),
+            Transaction(id: UUID(), name: "Retiro en ventanilla", description: "Agencia Mall del Sol", amount: -50.00, balance: 1419.21, date: yesterday, type: .withdrawal),
+            Transaction(id: UUID(), name: "Emapad", description: "Pago de servicio agua", amount: -10.00, balance: 1469.21, date: yesterday, type: .payment),
+            Transaction(id: UUID(), name: "Guerrero Keyla", description: "Salida sushi", amount: 60.00, balance: 1479.21, date: yesterday, type: .deposit),
+            Transaction(id: UUID(), name: "Retiro de tu meta", description: "Carrito 2026", amount: 100.00, balance: 1419.21, date: yesterday, type: .goal),
             
             // Hace 2 días
-            Transaction(id: UUID(), name: "Chocolateria San Ferna", description: "Compra con tarjeta", amount: -80.00, balance: 160.00, date: twoDaysAgo, type: .cardPurchase),
-            Transaction(id: UUID(), name: "Transferencia a tu meta", description: "Vacaciones Argentina", amount: -220.00, balance: 240.00, date: twoDaysAgo, type: .goal),
-            Transaction(id: UUID(), name: "Sueldo acreditado", description: "Transferencia recibida", amount: 460.00, balance: 480.00, date: twoDaysAgo, type: .salary)
+            Transaction(id: UUID(), name: "Chocolateria San Ferna", description: "Compra con tarjeta", amount: -80.00, balance: 1319.21, date: twoDaysAgo, type: .cardPurchase),
+            Transaction(id: UUID(), name: "Transferencia a tu meta", description: "Vacaciones Argentina", amount: -220.00, balance: 1399.21, date: twoDaysAgo, type: .goal),
+            Transaction(id: UUID(), name: "Sueldo acreditado", description: "Transferencia recibida", amount: 460.00, balance: 1619.21, date: twoDaysAgo, type: .salary)
         ]
         
         // Initial display with all transactions

@@ -52,7 +52,7 @@ final class DocumentsViewController: UIViewController {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
         label.text = "Documentos"
-        label.font = UIFont.systemFont(ofSize: 17, weight: .semibold)
+        label.font = UIFont.manrope(size: 17, weight: .semibold)
         label.textColor = .textPrimary
         label.textAlignment = .center
         return label
@@ -220,7 +220,7 @@ final class DocumentsViewController: UIViewController {
         let titleLabel = UILabel()
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.text = title
-        titleLabel.font = UIFont.systemFont(ofSize: 20, weight: .semibold)
+        titleLabel.font = UIFont.manrope(size: 20, weight: .semibold)
         titleLabel.textColor = .black
         
         let subtitleLabel = UILabel()
@@ -376,7 +376,7 @@ final class DocumentsViewController: UIViewController {
         let monthLabel = UILabel()
         monthLabel.translatesAutoresizingMaskIntoConstraints = false
         monthLabel.text = month.name
-        monthLabel.font = UIFont.systemFont(ofSize: 17, weight: .regular)
+        monthLabel.font = UIFont.manrope(size: 17, weight: .regular)
         monthLabel.textColor = .black
         
         container.addSubview(checkbox)
@@ -529,7 +529,7 @@ final class DocumentsViewController: UIViewController {
         let titleLabel = UILabel()
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.text = "Estados de cuenta"
-        titleLabel.font = UIFont.systemFont(ofSize: 20, weight: .semibold)
+        titleLabel.font = UIFont.manrope(size: 20, weight: .semibold)
         titleLabel.textColor = .black
         
         let subtitleLabel = UILabel()

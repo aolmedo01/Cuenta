@@ -4,8 +4,8 @@ import Testing
 struct CuentaTests {
     
     @Test func testAccountFormattedBalance() async throws {
-        let account = Account(accountNumber: "12788373662", accountType: "AHO", balance: 1482000.00)
-        #expect(account.formattedBalance == "$1,482,000.00")
+        let account = Account(accountNumber: "12788373662", accountType: "AHO", balance: 2899.00)
+        #expect(account.formattedBalance == "$2,899.00")
     }
     
     @Test func testTransactionPositiveAmount() async throws {

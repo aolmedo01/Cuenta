@@ -32,7 +32,7 @@ final class FilterChipButton: UIButton {
         // Set title first
         setTitle(title, for: .normal)
         setTitleColor(UIColor(red: 0.318, green: 0.353, blue: 0.451, alpha: 1), for: .normal)
-        titleLabel?.font = UIFont.systemFont(ofSize: 11, weight: .regular)
+        titleLabel?.font = UIFont.manrope(size: 11, weight: .regular)
         
         if showChevron {
             // Chevron icon
@@ -192,7 +192,7 @@ final class FilterChipsView: UIView {
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setTitle("Restablecer", for: .normal)
         button.setTitleColor(UIColor(red: 0.318, green: 0.353, blue: 0.451, alpha: 1), for: .normal)
-        button.titleLabel?.font = UIFont.systemFont(ofSize: 11, weight: .regular)
+        button.titleLabel?.font = UIFont.manrope(size: 11, weight: .regular)
         button.addTarget(self, action: #selector(resetTapped), for: .touchUpInside)
         button.isHidden = true
         return button

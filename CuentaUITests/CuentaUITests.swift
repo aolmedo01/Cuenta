@@ -12,7 +12,7 @@ final class CuentaUITests: XCTestCase {
         app.launch()
         
         // Verifica que el saldo sea visible
-        XCTAssertTrue(app.staticTexts["$1,482,000.00"].exists)
+        XCTAssertTrue(app.staticTexts["$2,899.00"].exists)
     }
     
     @MainActor

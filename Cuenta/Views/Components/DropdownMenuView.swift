@@ -158,7 +158,7 @@ final class DropdownMenuView: UIView {
         let checkmark = UILabel()
         checkmark.translatesAutoresizingMaskIntoConstraints = false
         checkmark.text = "✓"
-        checkmark.font = .systemFont(ofSize: 17, weight: .semibold)
+        checkmark.font = .manrope(size: 17, weight: .semibold)
         checkmark.textColor = UIColor(red: 0.2, green: 0.2, blue: 0.2, alpha: 1)
         checkmark.isHidden = !item.isSelected
         
@@ -166,7 +166,7 @@ final class DropdownMenuView: UIView {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
         label.text = item.title
-        label.font = .systemFont(ofSize: 17, weight: .regular)
+        label.font = .manrope(size: 17, weight: .regular)
         label.textColor = UIColor(red: 0.2, green: 0.2, blue: 0.2, alpha: 1)
         
         container.addSubview(checkmark)

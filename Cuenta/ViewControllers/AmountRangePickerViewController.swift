@@ -79,7 +79,7 @@ final class AmountRangePickerViewController: UIViewController {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
         label.text = "Filtrar monto"
-        label.font = .systemFont(ofSize: 17, weight: .semibold)
+        label.font = .manrope(size: 17, weight: .semibold)
         label.textColor = UIColor(red: 0.2, green: 0.2, blue: 0.2, alpha: 1)
         label.textAlignment = .center
         return label
@@ -110,7 +110,7 @@ final class AmountRangePickerViewController: UIViewController {
         let textField = UITextField()
         textField.translatesAutoresizingMaskIntoConstraints = false
         textField.placeholder = "$0.00"
-        textField.font = .systemFont(ofSize: 17, weight: .regular)
+        textField.font = .manrope(size: 17, weight: .regular)
         textField.textColor = .black
         textField.keyboardType = .decimalPad
         textField.backgroundColor = .clear
@@ -121,7 +121,7 @@ final class AmountRangePickerViewController: UIViewController {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
         label.text = "Valor mínimo"
-        label.font = .systemFont(ofSize: 13, weight: .regular)
+        label.font = .manrope(size: 13, weight: .regular)
         label.textColor = UIColor(red: 0.6, green: 0.6, blue: 0.6, alpha: 1)
         return label
     }()
@@ -138,7 +138,7 @@ final class AmountRangePickerViewController: UIViewController {
         let textField = UITextField()
         textField.translatesAutoresizingMaskIntoConstraints = false
         textField.placeholder = "$0.00"
-        textField.font = .systemFont(ofSize: 17, weight: .regular)
+        textField.font = .manrope(size: 17, weight: .regular)
         textField.textColor = .black
         textField.keyboardType = .decimalPad
         textField.backgroundColor = .clear
@@ -149,7 +149,7 @@ final class AmountRangePickerViewController: UIViewController {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
         label.text = "Valor máximo"
-        label.font = .systemFont(ofSize: 13, weight: .regular)
+        label.font = .manrope(size: 13, weight: .regular)
         label.textColor = UIColor(red: 0.6, green: 0.6, blue: 0.6, alpha: 1)
         return label
     }()

@@ -81,7 +81,7 @@ final class AllFiltersViewController: UIViewController {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
         label.text = "Filtrar movimientos"
-        label.font = .systemFont(ofSize: 17, weight: .semibold)
+        label.font = .manrope(size: 17, weight: .semibold)
         label.textColor = UIColor(red: 0.2, green: 0.2, blue: 0.2, alpha: 1)
         label.textAlignment = .center
         return label
@@ -147,7 +147,7 @@ final class AllFiltersViewController: UIViewController {
         let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setTitle("Restablecer", for: .normal)
-        button.titleLabel?.font = .systemFont(ofSize: 17, weight: .semibold)
+        button.titleLabel?.font = .manrope(size: 17, weight: .semibold)
         button.setTitleColor(UIColor(red: 0.122, green: 0.161, blue: 0.239, alpha: 1), for: .normal)
         button.addTarget(self, action: #selector(resetTapped), for: .touchUpInside)
         return button
@@ -335,7 +335,7 @@ final class AllFiltersViewController: UIViewController {
         let titleLabel = UILabel()
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.text = title
-        titleLabel.font = .systemFont(ofSize: 17, weight: .regular)
+        titleLabel.font = .manrope(size: 17, weight: .regular)
         titleLabel.textColor = .black
         
         let button = UIButton(type: .system)
@@ -343,7 +343,7 @@ final class AllFiltersViewController: UIViewController {
         
         let valueLabel = UILabel()
         valueLabel.text = value
-        valueLabel.font = .systemFont(ofSize: 17, weight: .regular)
+        valueLabel.font = .manrope(size: 17, weight: .regular)
         valueLabel.textColor = UIColor(red: 0.235, green: 0.235, blue: 0.263, alpha: 0.6)
         
         let chevron = UIImageView(image: UIImage(systemName: "chevron.up.chevron.down"))
@@ -388,7 +388,7 @@ final class AllFiltersViewController: UIViewController {
         let titleLabel = UILabel()
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.text = title
-        titleLabel.font = .systemFont(ofSize: 17, weight: .regular)
+        titleLabel.font = .manrope(size: 17, weight: .regular)
         titleLabel.textColor = .black
         
         let button = UIButton(type: .system)
@@ -397,7 +397,7 @@ final class AllFiltersViewController: UIViewController {
         button.layer.cornerRadius = 6
         button.setTitle("9 feb 2026", for: .normal)
         button.setTitleColor(.black, for: .normal)
-        button.titleLabel?.font = .systemFont(ofSize: 17, weight: .regular)
+        button.titleLabel?.font = .manrope(size: 17, weight: .regular)
         button.contentEdgeInsets = UIEdgeInsets(top: 6, left: 11, bottom: 6, right: 11)
         
         container.addSubview(titleLabel)
@@ -425,7 +425,7 @@ final class AllFiltersViewController: UIViewController {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
         label.text = title
-        label.font = .systemFont(ofSize: 17, weight: .medium)
+        label.font = .manrope(size: 17, weight: .medium)
         label.textColor = .black
         
         container.addSubview(label)

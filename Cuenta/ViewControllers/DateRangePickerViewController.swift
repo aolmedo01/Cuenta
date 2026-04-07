@@ -82,7 +82,7 @@ final class DateRangePickerViewController: UIViewController {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
         label.text = "Filtrar fecha"
-        label.font = .systemFont(ofSize: 17, weight: .semibold)
+        label.font = .manrope(size: 17, weight: .semibold)
         label.textColor = UIColor(red: 0.2, green: 0.2, blue: 0.2, alpha: 1)
         label.textAlignment = .center
         return label
@@ -119,7 +119,7 @@ final class DateRangePickerViewController: UIViewController {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
         label.text = "Empieza"
-        label.font = .systemFont(ofSize: 17, weight: .regular)
+        label.font = .manrope(size: 17, weight: .regular)
         label.textColor = .black
         return label
     }()
@@ -130,7 +130,7 @@ final class DateRangePickerViewController: UIViewController {
         button.backgroundColor = UIColor(red: 0.463, green: 0.463, blue: 0.502, alpha: 0.12)
         button.layer.cornerRadius = 6
         button.setTitleColor(.black, for: .normal)
-        button.titleLabel?.font = .systemFont(ofSize: 17, weight: .regular)
+        button.titleLabel?.font = .manrope(size: 17, weight: .regular)
         button.contentEdgeInsets = UIEdgeInsets(top: 6, left: 11, bottom: 6, right: 11)
         button.addTarget(self, action: #selector(startDateTapped), for: .touchUpInside)
         return button
@@ -162,7 +162,7 @@ final class DateRangePickerViewController: UIViewController {
         let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setTitleColor(.black, for: .normal)
-        button.titleLabel?.font = .systemFont(ofSize: 17, weight: .semibold)
+        button.titleLabel?.font = .manrope(size: 17, weight: .semibold)
         button.contentHorizontalAlignment = .left
         return button
     }()
@@ -232,7 +232,7 @@ final class DateRangePickerViewController: UIViewController {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
         label.text = "Termina"
-        label.font = .systemFont(ofSize: 17, weight: .regular)
+        label.font = .manrope(size: 17, weight: .regular)
         label.textColor = .black
         return label
     }()
@@ -243,7 +243,7 @@ final class DateRangePickerViewController: UIViewController {
         button.backgroundColor = UIColor(red: 0.463, green: 0.463, blue: 0.502, alpha: 0.12)
         button.layer.cornerRadius = 6
         button.setTitleColor(.black, for: .normal)
-        button.titleLabel?.font = .systemFont(ofSize: 17, weight: .regular)
+        button.titleLabel?.font = .manrope(size: 17, weight: .regular)
         button.contentEdgeInsets = UIEdgeInsets(top: 6, left: 11, bottom: 6, right: 11)
         button.addTarget(self, action: #selector(endDateTapped), for: .touchUpInside)
         return button
@@ -418,7 +418,7 @@ final class DateRangePickerViewController: UIViewController {
         for day in weekdays {
             let label = UILabel()
             label.text = day
-            label.font = .systemFont(ofSize: 13, weight: .semibold)
+            label.font = .manrope(size: 13, weight: .semibold)
             label.textColor = UIColor(red: 0.235, green: 0.235, blue: 0.263, alpha: 0.3)
             label.textAlignment = .center
             weekdayStackView.addArrangedSubview(label)
@@ -435,7 +435,7 @@ final class DateRangePickerViewController: UIViewController {
             for col in 0..<columns {
                 let button = UIButton(type: .system)
                 button.translatesAutoresizingMaskIntoConstraints = false
-                button.titleLabel?.font = .systemFont(ofSize: 20, weight: .regular)
+                button.titleLabel?.font = .manrope(size: 20, weight: .regular)
                 button.setTitleColor(.black, for: .normal)
                 button.addTarget(self, action: #selector(dayTapped(_:)), for: .touchUpInside)
                 button.tag = row * columns + col
@@ -514,10 +514,10 @@ final class DateRangePickerViewController: UIViewController {
                     if isStartDate || isEndDate {
                         button.backgroundColor = UIColor(red: 0, green: 0.533, blue: 1, alpha: 0.12)
                         button.setTitleColor(UIColor(red: 0, green: 0.533, blue: 1, alpha: 1), for: .normal)
-                        button.titleLabel?.font = .systemFont(ofSize: 24, weight: .medium)
+                        button.titleLabel?.font = .manrope(size: 24, weight: .medium)
                         button.layer.cornerRadius = 22
                     } else {
-                        button.titleLabel?.font = .systemFont(ofSize: 20, weight: .regular)
+                        button.titleLabel?.font = .manrope(size: 20, weight: .regular)
                     }
                 }
             }

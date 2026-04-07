@@ -56,7 +56,7 @@ final class SearchBarView: UIView {
             string: "Buscar movimiento",
             attributes: [.foregroundColor: UIColor(red: 0.851, green: 0.851, blue: 0.851, alpha: 1.0)] // #D9D9D9
         )
-        textField.font = UIFont.systemFont(ofSize: 17, weight: .medium)
+        textField.font = UIFont.manrope(size: 17, weight: .medium)
         textField.textColor = .textPrimary
         textField.borderStyle = .none
         textField.backgroundColor = .clear

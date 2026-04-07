@@ -70,6 +70,9 @@ final class TransactionCell: UIView {
         label.translatesAutoresizingMaskIntoConstraints = false
         label.font = .manrope(size: 17, weight: .semibold)
         label.textColor = UIColor(red: 0.122, green: 0.161, blue: 0.239, alpha: 1) // #1F293D
+        label.numberOfLines = 1
+        label.lineBreakMode = .byTruncatingTail
+        label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         return label
     }()
     
@@ -78,6 +81,9 @@ final class TransactionCell: UIView {
         label.translatesAutoresizingMaskIntoConstraints = false
         label.font = .manrope(size: 15, weight: .regular)
         label.textColor = UIColor(red: 0.424, green: 0.455, blue: 0.553, alpha: 1) // #6C748D
+        label.numberOfLines = 1
+        label.lineBreakMode = .byTruncatingTail
+        label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         return label
     }()
     
@@ -123,6 +129,12 @@ final class TransactionCell: UIView {
         label.translatesAutoresizingMaskIntoConstraints = false
         label.font = .manrope(size: 15, weight: .regular)
         label.textAlignment = .right
+        label.numberOfLines = 1
+        label.lineBreakMode = .byClipping
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = 0.9
+        label.setContentCompressionResistancePriority(.required, for: .horizontal)
+        label.setContentHuggingPriority(.required, for: .horizontal)
         return label
     }()
     
@@ -132,6 +144,12 @@ final class TransactionCell: UIView {
         label.font = .manrope(size: 12, weight: .regular)
         label.textColor = UIColor(red: 0.541, green: 0.576, blue: 0.659, alpha: 1) // #8A93A8
         label.textAlignment = .right
+        label.numberOfLines = 1
+        label.lineBreakMode = .byClipping
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = 0.9
+        label.setContentCompressionResistancePriority(.required, for: .horizontal)
+        label.setContentHuggingPriority(.required, for: .horizontal)
         return label
     }()
     
