@@ -176,15 +176,14 @@ final class TransactionReceiptViewController: UIViewController {
         return label
     }()
     
-    // Close button
+    // Header back button
     private let closeButton: UIButton = {
         let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
-        let config = UIImage.SymbolConfiguration(pointSize: 12, weight: .semibold)
-        button.setImage(UIImage(systemName: "xmark", withConfiguration: config), for: .normal)
+        let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .semibold)
+        button.setImage(UIImage(systemName: "chevron.left", withConfiguration: config), for: .normal)
         button.tintColor = UIColor(red: 0.424, green: 0.455, blue: 0.553, alpha: 1)
-        button.backgroundColor = UIColor(red: 0.961, green: 0.965, blue: 0.973, alpha: 1)
-        button.layer.cornerRadius = 16
+        button.backgroundColor = .clear
         return button
     }()
     
@@ -229,25 +228,15 @@ final class TransactionReceiptViewController: UIViewController {
     private func setupUI() {
         view.backgroundColor = UIColor(red: 0.969, green: 0.973, blue: 0.980, alpha: 1) // Light gray background
         view.clipsToBounds = true
-        
-        // Add decorative circles first (behind everything)
-        view.addSubview(outerCircle)
-        view.addSubview(middleCircle)
-        
-        // Checkmark container as close button
-        view.addSubview(checkmarkContainer)
-        checkmarkContainer.addSubview(checkmarkImageView)
-        
-        // Add tap gesture to checkmark to close
-        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(closeTapped))
-        checkmarkContainer.addGestureRecognizer(tapGesture)
-        checkmarkContainer.isUserInteractionEnabled = true
-        
+
+        view.addSubview(closeButton)
         view.addSubview(headerLabel)
         view.addSubview(amountLabel)
         view.addSubview(descriptionLabel)
         view.addSubview(dateLabel)
         view.addSubview(journeyCard)
+        
+        closeButton.addTarget(self, action: #selector(closeTapped), for: .touchUpInside)
         
         journeyCard.addSubview(journeyTitleLabel)
         journeyCard.addSubview(originCircle)
@@ -260,34 +249,16 @@ final class TransactionReceiptViewController: UIViewController {
         journeyCard.addSubview(codeLabel)
         journeyCard.addSubview(codeValueLabel)
         
-        // Update circle sizes for layout
-        outerCircle.layer.cornerRadius = 100
-        middleCircle.layer.cornerRadius = 70
-        
         NSLayoutConstraint.activate([   
             // Header - centered
             headerLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 24),
             headerLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             
-            // Decorative circles - positioned to the right, partially off-screen
-            outerCircle.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: 60),
-            outerCircle.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
-            outerCircle.widthAnchor.constraint(equalToConstant: 200),
-            outerCircle.heightAnchor.constraint(equalToConstant: 200),
-            
-            middleCircle.centerXAnchor.constraint(equalTo: outerCircle.centerXAnchor),
-            middleCircle.centerYAnchor.constraint(equalTo: outerCircle.centerYAnchor),
-            middleCircle.widthAnchor.constraint(equalToConstant: 140),
-            middleCircle.heightAnchor.constraint(equalToConstant: 140),
-            
-            // Checkmark container - centered in circles (acts as close button)
-            checkmarkContainer.centerXAnchor.constraint(equalTo: outerCircle.centerXAnchor),
-            checkmarkContainer.centerYAnchor.constraint(equalTo: outerCircle.centerYAnchor),
-            checkmarkContainer.widthAnchor.constraint(equalToConstant: 80),
-            checkmarkContainer.heightAnchor.constraint(equalToConstant: 80),
-            
-            checkmarkImageView.centerXAnchor.constraint(equalTo: checkmarkContainer.centerXAnchor),
-            checkmarkImageView.centerYAnchor.constraint(equalTo: checkmarkContainer.centerYAnchor),
+            // Back button in header
+            closeButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            closeButton.centerYAnchor.constraint(equalTo: headerLabel.centerYAnchor),
+            closeButton.widthAnchor.constraint(equalToConstant: 28),
+            closeButton.heightAnchor.constraint(equalToConstant: 28),
             
             // Amount - below header, centered
             amountLabel.topAnchor.constraint(equalTo: headerLabel.bottomAnchor, constant: 32),
